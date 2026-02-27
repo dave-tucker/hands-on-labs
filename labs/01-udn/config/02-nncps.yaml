@@ -1,0 +1,26 @@
+# OVS bridge mapping for the localnet UDN.
+#
+# Creates an OVS bridge (ovs-br-vlan100) with ens4 (the NIC attached to
+# br-vlan100 by kcli) as a port, and maps the OVN localnet name
+# "localnet100" to that bridge.
+#
+# ens4 is the first extra_network NIC on every node.
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: localnet-bridge-mapping
+spec:
+  desiredState:
+    ovn:
+      bridge-mappings:
+        - localnet: localnet100
+          bridge: ovs-br-vlan100
+          state: present
+    interfaces:
+      - name: ovs-br-vlan100
+        type: ovs-bridge
+        state: up
+        bridge:
+          port:
+            - name: ens4

@@ -1,0 +1,29 @@
+site_name: OVN-Kubernetes Network Labs
+site_description: Hands-on labs for advanced OVN-Kubernetes networking
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.sections
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: docs/snippets
+      check_paths: true
+
+repo_url: https://github.com/openshift/network-hol
+repo_name: openshift/network-hol
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Labs:
+    - UDN: labs/01-udn/index.md
+    - VRF-Lite: labs/03-vrf-lite/index.md

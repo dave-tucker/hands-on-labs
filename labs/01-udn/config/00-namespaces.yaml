@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: udn-l3
+  labels:
+    k8s.ovn.org/primary-user-defined-network: ""
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: udn-l2-a
+  labels:
+    k8s.ovn.org/primary-user-defined-network: ""
+    network-role: l2-udn
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: udn-l2-b
+  labels:
+    k8s.ovn.org/primary-user-defined-network: ""
+    network-role: l2-udn
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: udn-localnet
+  labels:
+    network-role: localnet

@@ -1,0 +1,11 @@
+cluster: udn
+domain: labs.ovn-k8s.local
+ctlplanes: 1
+workers: 1
+memory: 12288
+numcpus: 8
+disk_size: 60
+network: default
+
+extra_networks:
+- br-vlan100

@@ -1,0 +1,248 @@
+# --- L3 UDN pods (one per node for east-west testing) ---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: l3-pod-1
+  namespace: udn-l3
+  labels:
+    app: network-tools
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+  containers:
+    - name: network-tools
+      image: quay.io/openshift/origin-network-tools:latest
+      command: ["sleep", "infinity"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: l3-pod-2
+  namespace: udn-l3
+  labels:
+    app: network-tools
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
+  containers:
+    - name: network-tools
+      image: quay.io/openshift/origin-network-tools:latest
+      command: ["sleep", "infinity"]
+---
+# --- L2 ClusterUDN pods (namespace udn-l2-a, one per node) ---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: l2-pod-1
+  namespace: udn-l2-a
+  labels:
+    app: network-tools
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+  containers:
+    - name: network-tools
+      image: quay.io/openshift/origin-network-tools:latest
+      command: ["sleep", "infinity"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: l2-pod-2
+  namespace: udn-l2-a
+  labels:
+    app: network-tools
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
+  containers:
+    - name: network-tools
+      image: quay.io/openshift/origin-network-tools:latest
+      command: ["sleep", "infinity"]
+---
+# --- L2 ClusterUDN pod (namespace udn-l2-b, cross-namespace test) ---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: l2-pod-b
+  namespace: udn-l2-b
+  labels:
+    app: network-tools
+spec:
+  containers:
+    - name: network-tools
+      image: quay.io/openshift/origin-network-tools:latest
+      command: ["sleep", "infinity"]
+---
+# --- L2 ClusterUDN VM ---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: l2-vm
+  namespace: udn-l2-a
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        app: network-tools
+    spec:
+      domain:
+        resources:
+          requests:
+            memory: 512Mi
+        devices:
+          disks:
+            - name: containerdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: udn-primary
+              binding:
+                name: l2binding
+      networks:
+        - name: udn-primary
+          pod: {}
+      volumes:
+        - name: containerdisk
+          containerDisk:
+            image: quay.io/containerdisks/fedora:latest
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              user: ovnkube
+              password: ovnrocks!
+              chpasswd:
+                expire: false
+---
+# --- Localnet VMs ---
+# Static IPs via cloud-init since IPAM is disabled on the localnet CUDN.
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: localnet-vm-1
+  namespace: udn-localnet
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        app: network-tools
+    spec:
+      domain:
+        resources:
+          requests:
+            memory: 512Mi
+        devices:
+          disks:
+            - name: containerdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+            - name: localnet
+              macAddress: "02:E4:03:D9:22:4C"
+              bridge: {}
+      networks:
+        - name: default
+          pod: {}
+        - name: localnet
+          multus:
+            networkName: udn-localnet/localnet-secondary
+      volumes:
+        - name: containerdisk
+          containerDisk:
+            image: quay.io/containerdisks/fedora:latest
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              user: ovnkube
+              password: ovnrocks!
+              chpasswd:
+                expire: false
+            networkData: |
+              version: 2
+              ethernets:
+                enp2s0:
+                  addresses:
+                    - 192.168.100.20/24
+                  routes:
+                    - to: 172.16.0.0/31
+                      via: 192.168.100.1
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: localnet-vm-2
+  namespace: udn-localnet
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        app: network-tools
+    spec:
+      domain:
+        resources:
+          requests:
+            memory: 512Mi
+        devices:
+          disks:
+            - name: containerdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+            - name: localnet
+              macAddress: "02:E4:03:D9:22:5C"
+              bridge: {}
+      networks:
+        - name: default
+          pod: {}
+        - name: localnet
+          multus:
+            networkName: udn-localnet/localnet-secondary
+      volumes:
+        - name: containerdisk
+          containerDisk:
+            image: quay.io/containerdisks/fedora:latest
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              user: ovnkube
+              password: ovnrocks!
+              chpasswd:
+                expire: false
+            networkData: |
+              version: 2
+              ethernets:
+                enp2s0:
+                  addresses:
+                    - 192.168.100.21/24
+                  routes:
+                    - to: 172.16.0.0/31
+                      via: 192.168.100.1

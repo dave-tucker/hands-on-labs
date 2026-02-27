@@ -1,0 +1,36 @@
+name: vrf-lite
+
+mgmt:
+  network: clab
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  nodes:
+    br-tenant1:
+      kind: bridge
+    br-tenant2:
+      kind: bridge
+
+    r1:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - config/frr.conf:/etc/frr/frr.conf
+        - config/daemons:/etc/frr/daemons
+        - config/vtysh.conf:/etc/frr/vtysh.conf
+        - config/r1-start.sh:/r1-start.sh
+      cmd: /bin/sh /r1-start.sh
+    l1:
+      kind: linux
+      image: quay.io/openshift/origin-network-tools:latest
+      cmd: sleep infinity
+    l2:
+      kind: linux
+      image: quay.io/openshift/origin-network-tools:latest
+      cmd: sleep infinity
+
+  links:
+    - endpoints: ["r1:eth1", "br-tenant1:t1-r1"]
+    - endpoints: ["r1:eth2", "br-tenant2:t2-r1"]
+    - endpoints: ["r1:eth3", "l1:eth1"]
+    - endpoints: ["r1:eth4", "l2:eth1"]

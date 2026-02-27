@@ -1,0 +1,15 @@
+cluster: udn
+domain: labs.ovn-k8s.local
+version: stable
+tag: '4.20'
+ctlplanes: 1
+workers: 1
+memory: 24576
+numcpus: 8
+disk_size: 60
+network: default
+network_type: OVNKubernetes
+pull_secret: ~/pull_secret.json
+
+extra_networks:
+- br-vlan100

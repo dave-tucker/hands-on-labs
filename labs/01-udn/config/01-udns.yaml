@@ -1,0 +1,51 @@
+# L3 UDN — namespace-scoped UserDefinedNetwork (single namespace).
+# Each node gets a /24 slice of the 10.30.0.0/16 supernet.
+apiVersion: k8s.ovn.org/v1
+kind: UserDefinedNetwork
+metadata:
+  name: l3-primary
+  namespace: udn-l3
+spec:
+  topology: Layer3
+  layer3:
+    role: Primary
+    subnets:
+      - cidr: 10.30.0.0/16
+        hostSubnet: 24
+---
+# L2 ClusterUDN — cluster-scoped, selects both udn-l2-a and udn-l2-b
+# via the network-role=l2-udn label.  All pods share a flat 10.20.0.0/24.
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: l2-primary
+spec:
+  namespaceSelector:
+    matchLabels:
+      network-role: l2-udn
+  network:
+    topology: Layer2
+    layer2:
+      role: Primary
+      subnets:
+        - 10.20.0.0/24
+      ipam:
+        lifecycle: Persistent
+---
+# Localnet ClusterUDN — secondary network backed by the br-vlan100 bridge.
+# Pods/VMs get a secondary interface directly on the 192.168.100.0/24 segment.
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: localnet-secondary
+spec:
+  namespaceSelector:
+    matchLabels:
+      network-role: localnet
+  network:
+    topology: Localnet
+    localnet:
+      role: Secondary
+      physicalNetworkName: localnet100
+      ipam:
+        mode: Disabled

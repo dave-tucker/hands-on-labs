@@ -1,0 +1,46 @@
+# Attach ens4 (br-tenant1) and ens5 (br-tenant2) to their respective
+# kernel VRFs so that BGP peering and traffic flow stay VRF-isolated.
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: tenant1-vrf
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: vrf-lite-ctlplane-0.labs.ovn-k8s.local
+  desiredState:
+    interfaces:
+      - name: ens4
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false
+          address:
+            - ip: 172.19.0.10
+              prefix-length: 24
+        vrf:
+          port:
+            - ens4
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: tenant2-vrf
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: vrf-lite-ctlplane-0.labs.ovn-k8s.local
+  desiredState:
+    interfaces:
+      - name: ens5
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false
+          address:
+            - ip: 172.19.0.10
+              prefix-length: 24
+        vrf:
+          port:
+            - ens5

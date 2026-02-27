@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant1
+  labels:
+    k8s.ovn.org/primary-user-defined-network: ""
+    cluster-udn: tenant1
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant2
+  labels:
+    k8s.ovn.org/primary-user-defined-network: ""
+    cluster-udn: tenant2

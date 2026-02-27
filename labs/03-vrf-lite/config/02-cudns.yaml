@@ -1,0 +1,37 @@
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: tenant1
+  labels:
+    advertise-external-secondary-vrf: "true"
+spec:
+  namespaceSelector:
+    matchLabels:
+      cluster-udn: tenant1
+  network:
+    topology: Layer2
+    layer2:
+      role: Primary
+      subnets:
+        - 10.100.1.0/24
+      ipam:
+        lifecycle: Persistent
+---
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: tenant2
+  labels:
+    advertise-external-secondary-vrf: "true"
+spec:
+  namespaceSelector:
+    matchLabels:
+      cluster-udn: tenant2
+  network:
+    topology: Layer2
+    layer2:
+      role: Primary
+      subnets:
+        - 10.200.1.0/24
+      ipam:
+        lifecycle: Persistent

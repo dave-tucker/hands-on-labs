@@ -1,0 +1,16 @@
+cluster: vrf-lite
+domain: labs.ovn-k8s.local
+version: stable
+tag: '4.20'
+ctlplanes: 1
+workers: 0
+memory: 32768
+numcpus: 16
+disk_size: 60
+network: default
+network_type: OVNKubernetes
+pull_secret: ~/pull_secret.json
+
+extra_networks:
+- br-tenant1
+- br-tenant2

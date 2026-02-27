@@ -1,0 +1,39 @@
+name: udn
+
+mgmt:
+  network: clab
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  nodes:
+    # Host link (r1_eth1) and route/forwarding are configured by lab.sh with sudo
+    # after deploy; containerlab host exec runs as the deploy user and may lack
+    # privileges for ip/sysctl.
+    labhost:
+      kind: host
+
+    br-vlan100:
+      kind: bridge
+
+    r1:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - config/r1-frr.conf:/etc/frr/frr.conf
+        - config/r1-daemons:/etc/frr/daemons
+        - config/r1-vtysh.conf:/etc/frr/vtysh.conf
+        - config/r1-start.sh:/r1-start.sh
+      cmd: /bin/sh /r1-start.sh
+
+    ext-host:
+      kind: linux
+      image: quay.io/openshift/origin-network-tools:latest
+      cmd: sleep infinity
+      exec:
+        - ip addr add 172.16.0.1/31 dev eth1
+        - ip route add default via 172.16.0.0
+
+  links:
+    - endpoints: ["r1:eth1", "host:r1_eth1"]
+    - endpoints: ["r1:eth2", "br-vlan100:r1"]
+    - endpoints: ["r1:eth3", "ext-host:eth1"]
