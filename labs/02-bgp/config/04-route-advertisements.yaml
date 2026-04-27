@@ -1,0 +1,15 @@
+# Advertise the default pod network (PodNetwork) via BGP. Selects the
+# FRRConfiguration labeled use-for-advertisements.
+---
+apiVersion: k8s.ovn.org/v1
+kind: RouteAdvertisements
+metadata:
+  name: bgp-pod-network
+spec:
+  targetVRF: default
+  advertisements:
+    - PodNetwork
+  nodeSelector: {}
+  frrConfigurationSelector:
+    matchLabels:
+      use-for-advertisements: "true"

@@ -11,6 +11,7 @@ Supports both **OpenShift** (default) and **vanilla Kubernetes** clusters.
 | Lab | Description |
 |---|---|
 | [User Defined Networks (UDN)](labs/01-udn/index.md) | L2, L3, and Localnet UDN topologies with KubeVirt VMs |
+| [BGP](labs/02-bgp/index.md) | CLOS spine/leaf eBGP over loopbacks with BFD |
 | [VRF-Lite](labs/03-vrf-lite/index.md) | Multi-tenant VRF isolation with CUDNs and BGP peering |
 
 ## Quick start

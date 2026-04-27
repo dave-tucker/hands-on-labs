@@ -26,4 +26,5 @@ nav:
   - Getting Started: getting-started.md
   - Labs:
     - UDN: labs/01-udn/index.md
+    - BGP: labs/02-bgp/index.md
     - VRF-Lite: labs/03-vrf-lite/index.md

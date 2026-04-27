@@ -1,0 +1,95 @@
+# BGP loopback + P2P /31 + static routes to leaf loopbacks (bootstrap for
+# BGP over loopbacks). Apply before FRRConfiguration so OCP nodes can reach
+# 192.168.255.11 and 192.168.255.12 before BGP starts.
+#
+# Cluster name from kcli is "bgp", domain labs.ovn-k8s.local:
+# - Control plane: bgp-ctlplane-0.labs.ovn-k8s.local
+# - Worker: bgp-worker-0.labs.ovn-k8s.local
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bgp-master
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: bgp-ctlplane-0.labs.ovn-k8s.local
+  desiredState:
+    interfaces:
+      - name: lo-bgp
+        type: dummy
+        state: up
+        ipv4:
+          enabled: true
+          address:
+            - ip: 192.168.255.1
+              prefix-length: 32
+      - name: ens4
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false
+          address:
+            - ip: 10.0.1.1
+              prefix-length: 31
+      - name: ens5
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false
+          address:
+            - ip: 10.0.2.1
+              prefix-length: 31
+    routes:
+      config:
+        - destination: 192.168.255.11/32
+          next-hop-interface: ens4
+          next-hop-address: 10.0.1.0
+        - destination: 192.168.255.12/32
+          next-hop-interface: ens5
+          next-hop-address: 10.0.2.0
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bgp-worker
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: bgp-worker-0.labs.ovn-k8s.local
+  desiredState:
+    interfaces:
+      - name: lo-bgp
+        type: dummy
+        state: up
+        ipv4:
+          enabled: true
+          address:
+            - ip: 192.168.255.2
+              prefix-length: 32
+      - name: ens4
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false
+          address:
+            - ip: 10.0.1.3
+              prefix-length: 31
+      - name: ens5
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false
+          address:
+            - ip: 10.0.2.3
+              prefix-length: 31
+    routes:
+      config:
+        - destination: 192.168.255.11/32
+          next-hop-interface: ens4
+          next-hop-address: 10.0.1.2
+        - destination: 192.168.255.12/32
+          next-hop-interface: ens5
+          next-hop-address: 10.0.2.2
