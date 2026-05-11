@@ -1,29 +1,29 @@
-# BGP over loopbacks: neighbors are Leaf1 (192.168.255.11) and Leaf2
-# (192.168.255.12). ebgpMultiHop and BFD so sessions run over loopbacks.
-# Static routes (NNCP) must be applied first so nodes can reach leaf loopbacks.
-#
-# OpenShift: namespace openshift-frr-k8s. Vanilla K8s: use metallb-system or
-# the namespace where FRR-K8s is installed.
+# BGP configuration for control plane node
+# Node-specific to allow proper source address configuration
 ---
 apiVersion: frrk8s.metallb.io/v1beta1
 kind: FRRConfiguration
 metadata:
-  name: bgp-clos
+  name: bgp-clos-ctlplane
   namespace: openshift-frr-k8s
   labels:
     use-for-advertisements: "true"
 spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: bgp-ctlplane-0.labs.ovn-k8s.local
   bgp:
     routers:
       - asn: 65000
         vrf: default
-        id: lo-bgp
+        id: 192.168.255.1
         neighbors:
           - address: 192.168.255.11
             asn: 65001
             ebgpMultiHop: true
             bfdProfile: default
             disableMP: true
+            sourceaddress: 192.168.255.1
             toReceive:
               allowed:
                 mode: all
@@ -35,6 +35,7 @@ spec:
             ebgpMultiHop: true
             bfdProfile: default
             disableMP: true
+            sourceaddress: 192.168.255.1
             toReceive:
               allowed:
                 mode: all

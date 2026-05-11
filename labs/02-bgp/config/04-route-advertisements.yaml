@@ -10,6 +10,8 @@ spec:
   advertisements:
     - PodNetwork
   nodeSelector: {}
+  networkSelectors:
+    - networkSelectionType: DefaultNetwork
   frrConfigurationSelector:
     matchLabels:
       use-for-advertisements: "true"
