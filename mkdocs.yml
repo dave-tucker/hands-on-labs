@@ -18,8 +18,8 @@ markdown_extensions:
       base_path: docs/snippets
       check_paths: true
 
-repo_url: https://github.com/openshift/network-hol
-repo_name: openshift/network-hol
+repo_url: https://github.com/dave-tucker/hands-on-labs
+repo_name: dave-tucker/hands-on-labs
 
 nav:
   - Home: index.md
