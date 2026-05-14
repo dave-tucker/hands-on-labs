@@ -32,7 +32,10 @@ cp ~/Downloads/pull-secret.json ~/pull_secret.json
 
 | Lab | Description |
 |-----|-------------|
-| [VRF-Lite](labs/03-vrf-lite/) | Multi-tenant VRF-Lite with CUDNs |
+| [01-udn](labs/01-udn/) | User Defined Networks (UDN) |
+| [02-bgp](labs/02-bgp/) | BGP (CLOS fabric) |
+| [03-vrf-lite](labs/03-vrf-lite/) | Multi-tenant VRF-Lite with CUDNs |
+| [04-bgp-evpn](labs/04-bgp-evpn/) | BGP-EVPN |
 
 ## Quick start
 
@@ -51,7 +54,7 @@ cd labs/03-vrf-lite
 ```bash
 cd labs/03-vrf-lite
 CLUSTER_TYPE=k8s ./deploy.sh
-`
+
 # Teardown
 CLUSTER_TYPE=k8s ./destroy.sh
 ```
