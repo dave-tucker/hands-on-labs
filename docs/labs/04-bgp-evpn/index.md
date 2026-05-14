@@ -8,26 +8,27 @@ This lab extends the BGP CLOS fabric (lab 02) with EVPN (Ethernet VPN) support. 
 
 ### Topology
 
-```
-                    Spine1 (AS 65413)
-                    [IPv4 unicast only]
-                    10.10.1.0/31  10.10.2.0/31
-                    eth1           eth2
-                      |              |
-              +-------+              +-------+
-              |                             |
-         Leaf1 (AS 65001)             Leaf2 (AS 65002)
-         192.168.255.11              192.168.255.12
-         EVPN: ↔ Leaf2, ↔ ext-host   EVPN: ↔ Leaf1, ↔ ext-host
-         eth2,3: cluster nodes       eth2,3: cluster nodes
-         eth4: ext-host
-              |
-              |
-         ext-host (AS 65003)
-         192.168.255.13
-         VTEP: 100.64.0.13
-         EVPN: ↔ Leaf1, ↔ Leaf2
-         br-evpn: 10.50.0.100/24
+```mermaid
+graph TB
+    subgraph Spine
+        S1[Spine1<br/>AS 65413<br/>IPv4 unicast only]
+    end
+    
+    subgraph Leaves
+        L1[Leaf1<br/>AS 65001<br/>192.168.255.11<br/>EVPN: ↔ Leaf2, ↔ ext-host<br/>eth2,3: cluster nodes<br/>eth4: ext-host]
+        L2[Leaf2<br/>AS 65002<br/>192.168.255.12<br/>EVPN: ↔ Leaf1, ↔ ext-host<br/>eth2,3: cluster nodes]
+    end
+    
+    subgraph External
+        EH[ext-host<br/>AS 65003<br/>192.168.255.13<br/>VTEP: 100.64.0.13<br/>br-evpn: 10.50.0.100/24]
+    end
+    
+    S1 ---|eth1<br/>10.10.1.0/31| L1
+    S1 ---|eth2<br/>10.10.2.0/31| L2
+    L1 ---|eth4<br/>10.0.3.0/31| EH
+    L1 <-.EVPN.-> L2
+    L1 <-.EVPN.-> EH
+    L2 <-.EVPN.-> EH
 ```
 
 ### Addressing

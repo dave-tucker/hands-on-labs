@@ -39,34 +39,32 @@ a transit link. This enables realistic north-south testing without modifying
 cluster node routes -- the lab host already serves as the default gateway for
 cluster nodes on virbr0 and simply forwards traffic to r1.
 
-```
-                 ┌───────────┐
-                 │ ext-host  │
-                 │ 172.16.0.1│
-                 └─────┬─────┘
-                  eth1 │ 172.16.0.0/31
-                  eth3 │
-                 ┌─────┴─────┐
-                 │    r1     │
-                 │   (FRR)   │
-          eth1 ──┤           ├── eth2
-                 └──┬─────┬──┘
-     10.99.0.0/31   │     │  192.168.100.0/24
-         host link  │     │  br-vlan100
-                    │     │
-         ┌──────────┘     └──────────┐
-         │                           │
-  ┌──────┴──────┐          ┌─────────┴─────────┐
-  │  lab host   │          │  localnet pods/VMs │
-  │ virbr0      │          │  secondary iface   │
-  │ 192.168.122.1│         └───────────────────┘
-  └──────┬──────┘
-         │ 192.168.122.0/24
-  ┌──────┴──────┐
-  │cluster nodes│
-  │ default gw: │
-  │ 192.168.122.1│
-  └─────────────┘
+```mermaid
+graph TB
+    subgraph External
+        EH[ext-host<br/>172.16.0.1]
+    end
+    
+    subgraph Router
+        R1[r1<br/>FRR]
+    end
+    
+    subgraph Lab Host
+        LH[lab host<br/>virbr0<br/>192.168.122.1]
+    end
+    
+    subgraph Cluster
+        CN[cluster nodes<br/>default gw: 192.168.122.1]
+    end
+    
+    subgraph Localnet
+        LP[localnet pods/VMs<br/>secondary iface]
+    end
+    
+    EH ---|eth1/eth3<br/>172.16.0.0/31| R1
+    R1 ---|eth1<br/>10.99.0.0/31<br/>host link| LH
+    R1 ---|eth2<br/>192.168.100.0/24<br/>br-vlan100| LP
+    LH ---|192.168.122.0/24| CN
 ```
 
 ### Addressing

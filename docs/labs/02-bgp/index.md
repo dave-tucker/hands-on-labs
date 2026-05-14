@@ -19,22 +19,33 @@ per node.
 
 ### Topology
 
-```
-                    Spine1 (AS 65413)
-                    10.10.1.0/31  10.10.2.0/31
-                    eth1           eth2
-                      |              |
-              +-------+              +-------+
-              |                             |
-         Leaf1 (AS 65001)             Leaf2 (AS 65002)
-         192.168.255.11/32           192.168.255.12/32
-         eth2 10.0.1.0/31  eth3 10.0.1.2/31   eth2 10.0.2.0/31  eth3 10.0.2.2/31
-              |                 |                   |                 |
-              +-------- br-leaf1 +--------+          +-------- br-leaf2 +--------+
-                       |                 |                   |                 |
-                  master (65000)     worker (65000)     master (65000)     worker (65000)
-                  10.0.1.1 10.0.1.3 10.0.2.1 10.0.2.3
-                  192.168.255.1/32  192.168.255.2/32
+```mermaid
+graph TB
+    subgraph Spine
+        S1[Spine1<br/>AS 65413]
+    end
+    
+    subgraph Leaves
+        L1[Leaf1<br/>AS 65001<br/>192.168.255.11/32]
+        L2[Leaf2<br/>AS 65002<br/>192.168.255.12/32]
+    end
+    
+    subgraph br-leaf1
+        M1[master<br/>AS 65000<br/>10.0.1.1<br/>192.168.255.1/32]
+        W1[worker<br/>AS 65000<br/>10.0.1.3<br/>192.168.255.2/32]
+    end
+    
+    subgraph br-leaf2
+        M2[master<br/>AS 65000<br/>10.0.2.1]
+        W2[worker<br/>AS 65000<br/>10.0.2.3]
+    end
+    
+    S1 ---|eth1<br/>10.10.1.0/31| L1
+    S1 ---|eth2<br/>10.10.2.0/31| L2
+    L1 ---|eth2<br/>10.0.1.0/31| M1
+    L1 ---|eth3<br/>10.0.1.2/31| W1
+    L2 ---|eth2<br/>10.0.2.0/31| M2
+    L2 ---|eth3<br/>10.0.2.2/31| W2
 ```
 
 ### Addressing

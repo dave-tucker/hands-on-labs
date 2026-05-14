@@ -18,6 +18,43 @@ node's NIC.
 Each tenant has a second "site" (l1 and l2) directly attached to R1, used to
 validate end-to-end connectivity to the pods in the other tenant.
 
+### Topology
+
+```mermaid
+graph TB
+    subgraph VRF-tenant1["VRF: tenant1"]
+        L1[l1 site<br/>10.100.2.2]
+        R1T1[R1<br/>10.100.2.1]
+        CNT1[Cluster Node<br/>172.19.0.10<br/>VRF: tenant1]
+        P1[tenant1 pods<br/>10.100.1.0/24]
+        
+        L1 ---|10.100.2.0/24| R1T1
+        R1T1 ---|BGP peering<br/>172.19.0.0/24<br/>AS 65000 ↔ AS 65001| CNT1
+        CNT1 --- P1
+    end
+    
+    subgraph VRF-tenant2["VRF: tenant2"]
+        L2[l2 site<br/>10.200.2.2]
+        R1T2[R1<br/>10.200.2.1]
+        CNT2[Cluster Node<br/>172.19.0.10<br/>VRF: tenant2]
+        P2[tenant2 pods<br/>10.200.1.0/24]
+        
+        L2 ---|10.200.2.0/24| R1T2
+        R1T2 ---|BGP peering<br/>172.19.0.0/24<br/>AS 65000 ↔ AS 65001| CNT2
+        CNT2 --- P2
+    end
+    
+    style VRF-tenant1 fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
+    style VRF-tenant2 fill:#fff0e1,stroke:#cc6600,stroke-width:2px
+```
+
+!!! info "VRF Isolation"
+    The diagram shows two completely isolated routing domains. Even though both
+    VRFs share the same physical infrastructure (R1 and the cluster node), they
+    maintain separate routing tables. Traffic from tenant1 pods (10.100.1.0/24)
+    can only reach the l1 site (10.100.2.0/24), and tenant2 pods (10.200.1.0/24)
+    can only reach the l2 site (10.200.2.0/24).
+
 ## Addressing
 
 | Segment | Subnet | r1 | Nodes / Hosts |
