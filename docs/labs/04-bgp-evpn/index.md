@@ -86,12 +86,6 @@ This lab extends the BGP CLOS fabric (lab 02) with EVPN (Ethernet VPN) support. 
 
 From the `labs/04-bgp-evpn` directory:
 
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh up
-    ```
-
 === "Kubernetes"
 
     ```bash
@@ -114,9 +108,20 @@ export KUBECONFIG=$HOME/.kcli/clusters/bgp-evpn/auth/kubeconfig
 
 Install in order. Use the tab matching your cluster type.
 
+=== "OpenShift"
+
+    ```bash
+    ./lab.sh up
+    ```
+
 --8<-- "install-ovn-kubernetes.md"
 
 #### Enable network features
+
+=== "Kubernetes"
+
+    These features were configured at OVN-Kubernetes install time. Nothing to
+    do here.
 
 === "OpenShift"
 
@@ -146,19 +151,9 @@ Install in order. Use the tab matching your cluster type.
     kubectl rollout status daemonset -n openshift-ovn-kubernetes ovnkube-node --timeout=600s
     ```
 
-=== "Kubernetes"
-
-    These features were configured at OVN-Kubernetes install time. Nothing to
-    do here.
-
 --8<-- "install-nmstate.md"
 
 #### Install MetalLB / FRR-K8s
-
-=== "OpenShift"
-
-    FRR-K8s is enabled via the Cluster Network Operator (handled by the patch
-    above). No separate install needed.
 
 === "Kubernetes"
 
@@ -487,9 +482,8 @@ From the `labs/04-bgp-evpn` directory:
 
 === "OpenShift"
 
-    ```bash
-    ./lab.sh down
-    ```
+    FRR-K8s is enabled via the Cluster Network Operator (handled by the patch
+    above). No separate install needed.
 
 === "Kubernetes"
 
@@ -498,3 +492,9 @@ From the `labs/04-bgp-evpn` directory:
     ```
 
 This will destroy the containerlab topology, delete the kcli cluster, and remove the `br-leaf1` and `br-leaf2` bridges.
+
+=== "OpenShift"
+
+    ```bash
+    ./lab.sh down
+    ```

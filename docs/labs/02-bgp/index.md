@@ -65,12 +65,6 @@ per node.
 
 From the `labs/02-bgp` directory:
 
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh up
-    ```
-
 === "Kubernetes"
 
     ```bash
@@ -93,9 +87,20 @@ export KUBECONFIG=$HOME/.kcli/clusters/bgp/auth/kubeconfig
 
 Install in order. Use the tab matching your cluster type.
 
+=== "OpenShift"
+
+    ```bash
+    ./lab.sh up
+    ```
+
 --8<-- "install-ovn-kubernetes.md"
 
 #### Enable network features
+
+=== "Kubernetes"
+
+    These features were configured at OVN-Kubernetes install time. Nothing to
+    do here.
 
 === "OpenShift"
 
@@ -125,19 +130,9 @@ Install in order. Use the tab matching your cluster type.
     kubectl rollout status daemonset -n openshift-ovn-kubernetes ovnkube-node --timeout=600s
     ```
 
-=== "Kubernetes"
-
-    These features were configured at OVN-Kubernetes install time. Nothing to
-    do here.
-
 --8<-- "install-nmstate.md"
 
 #### Install MetalLB / FRR-K8s
-
-=== "OpenShift"
-
-    FRR-K8s is enabled via the Cluster Network Operator (handled by the patch
-    above). No separate install needed.
 
 === "Kubernetes"
 
@@ -220,11 +215,8 @@ All enactments should show `Available`.
 
 === "OpenShift"
 
-    ```bash
-    FRR_POD=$(oc get pods -n openshift-frr-k8s -o name | head -1)
-    oc exec -n openshift-frr-k8s "$FRR_POD" -c frr -- \
-      vtysh -c "show ip bgp summary"
-    ```
+    FRR-K8s is enabled via the Cluster Network Operator (handled by the patch
+    above). No separate install needed.
 
 === "Kubernetes"
 
@@ -242,8 +234,9 @@ Established.
 === "OpenShift"
 
     ```bash
+    FRR_POD=$(oc get pods -n openshift-frr-k8s -o name | head -1)
     oc exec -n openshift-frr-k8s "$FRR_POD" -c frr -- \
-      vtysh -c "show bfd peers"
+      vtysh -c "show ip bgp summary"
     ```
 
 === "Kubernetes"
@@ -313,7 +306,8 @@ From the `labs/02-bgp` directory:
 === "OpenShift"
 
     ```bash
-    ./lab.sh down
+    oc exec -n openshift-frr-k8s "$FRR_POD" -c frr -- \
+      vtysh -c "show bfd peers"
     ```
 
 === "Kubernetes"
@@ -324,3 +318,9 @@ From the `labs/02-bgp` directory:
 
 This will destroy the containerlab topology, delete the kcli cluster, and
 remove the `br-leaf1` and `br-leaf2` bridges.
+
+=== "OpenShift"
+
+    ```bash
+    ./lab.sh down
+    ```

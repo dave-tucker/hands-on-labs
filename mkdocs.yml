@@ -28,3 +28,4 @@ nav:
     - UDN: labs/01-udn/index.md
     - BGP: labs/02-bgp/index.md
     - VRF-Lite: labs/03-vrf-lite/index.md
+    - BGP-EVPN: labs/04-bgp-evpn/index.md

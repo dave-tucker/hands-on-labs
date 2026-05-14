@@ -88,12 +88,6 @@ cluster nodes on virbr0 and simply forwards traffic to r1.
 
 From the `labs/01-udn` directory:
 
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh up
-    ```
-
 === "Kubernetes"
 
     ```bash
@@ -116,6 +110,12 @@ export KUBECONFIG=$HOME/.kcli/clusters/udn/auth/kubeconfig
 
 Install the following components in order. Each section has platform-specific
 instructions — select the tab matching your cluster type.
+
+=== "OpenShift"
+
+    ```bash
+    ./lab.sh up
+    ```
 
 --8<-- "install-ovn-kubernetes.md"
 
@@ -366,12 +366,6 @@ docker exec clab-udn-ext-host ping -c 3 192.168.100.21
 
 From the `labs/01-udn` directory:
 
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh down
-    ```
-
 === "Kubernetes"
 
     ```bash
@@ -383,3 +377,9 @@ This will:
 1. Destroy the containerlab topology (r1, ext-host, host link auto-cleaned)
 2. Delete the kcli cluster and its VMs
 3. Remove the `br-vlan100` bridge
+
+=== "OpenShift"
+
+    ```bash
+    ./lab.sh down
+    ```

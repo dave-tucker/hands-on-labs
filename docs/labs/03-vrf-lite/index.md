@@ -48,12 +48,6 @@ RouteAdvertisements to advertise CUDN pod subnets (10.100.1.0/24,
 
 From the `labs/03-vrf-lite` directory:
 
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh up
-    ```
-
 === "Kubernetes"
 
     ```bash
@@ -76,9 +70,20 @@ export KUBECONFIG=$HOME/.kcli/clusters/vrf-lite/auth/kubeconfig
 
 Install the components in order.
 
+=== "OpenShift"
+
+    ```bash
+    ./lab.sh up
+    ```
+
 --8<-- "install-ovn-kubernetes.md"
 
 #### Enable network features
+
+=== "Kubernetes"
+
+    These features were configured at OVN-Kubernetes install time. Nothing to
+    do here.
 
 === "OpenShift"
 
@@ -108,19 +113,9 @@ Install the components in order.
     kubectl rollout status daemonset -n openshift-ovn-kubernetes ovnkube-node --timeout=600s
     ```
 
-=== "Kubernetes"
-
-    These features were configured at OVN-Kubernetes install time. Nothing to
-    do here.
-
 --8<-- "install-nmstate.md"
 
 #### Install MetalLB / FRR-K8s
-
-=== "OpenShift"
-
-    FRR-K8s is enabled via the Cluster Network Operator (handled by
-    `enable_network_features`). No separate install needed.
 
 === "Kubernetes"
 
@@ -174,12 +169,8 @@ Verify the VRFs have been created on the node:
 
 === "OpenShift"
 
-    ```bash
-    oc debug node/vrf-lite-ctlplane-0.labs.ovn-k8s.local -- \
-      chroot /host ip link show tenant1
-    oc debug node/vrf-lite-ctlplane-0.labs.ovn-k8s.local -- \
-      chroot /host ip link show tenant2
-    ```
+    FRR-K8s is enabled via the Cluster Network Operator (handled by
+    `enable_network_features`). No separate install needed.
 
 === "Kubernetes"
 
@@ -220,7 +211,10 @@ testing.
 === "OpenShift"
 
     ```bash
-    oc get pods -n openshift-frr-k8s
+    oc debug node/vrf-lite-ctlplane-0.labs.ovn-k8s.local -- \
+      chroot /host ip link show tenant1
+    oc debug node/vrf-lite-ctlplane-0.labs.ovn-k8s.local -- \
+      chroot /host ip link show tenant2
     ```
 
 === "Kubernetes"
@@ -247,9 +241,7 @@ All enactments should show `Available`.
 === "OpenShift"
 
     ```bash
-    FRR_POD=$(oc get pods -n openshift-frr-k8s -o name | head -1)
-    oc exec -n openshift-frr-k8s "$FRR_POD" -c frr -- \
-      vtysh -c "show ip bgp vrf tenant1 summary"
+    oc get pods -n openshift-frr-k8s
     ```
 
 === "Kubernetes"
@@ -305,7 +297,7 @@ Total number of neighbors 1
     ```bash
     FRR_POD=$(oc get pods -n openshift-frr-k8s -o name | head -1)
     oc exec -n openshift-frr-k8s "$FRR_POD" -c frr -- \
-      vtysh -c "show ip bgp vrf tenant1"
+      vtysh -c "show ip bgp vrf tenant1 summary"
     ```
 
 === "Kubernetes"
@@ -439,7 +431,9 @@ From the `labs/03-vrf-lite` directory:
 === "OpenShift"
 
     ```bash
-    ./lab.sh down
+    FRR_POD=$(oc get pods -n openshift-frr-k8s -o name | head -1)
+    oc exec -n openshift-frr-k8s "$FRR_POD" -c frr -- \
+      vtysh -c "show ip bgp vrf tenant1"
     ```
 
 === "Kubernetes"
@@ -453,3 +447,9 @@ This will:
 1. Destroy the containerlab topology
 2. Delete the kcli cluster and its VMs
 3. Remove the `br-tenant1` and `br-tenant2` bridges
+
+=== "OpenShift"
+
+    ```bash
+    ./lab.sh down
+    ```

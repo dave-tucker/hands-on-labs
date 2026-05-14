@@ -1,9 +1,5 @@
 #### Install OVN-Kubernetes
 
-=== "OpenShift"
-
-    OVN-Kubernetes is the default CNI on OpenShift -- no action needed.
-
 === "Kubernetes"
 
     Install OVN-Kubernetes via Helm:
@@ -17,3 +13,7 @@
       --set global.enableUserDefinedNetwork=true
     kubectl rollout status daemonset -n ovn-kubernetes ovnkube-node --timeout=300s
     ```
+
+=== "OpenShift"
+
+    OVN-Kubernetes is the default CNI on OpenShift -- no action needed.

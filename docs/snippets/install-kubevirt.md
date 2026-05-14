@@ -1,5 +1,22 @@
 #### Install KubeVirt
 
+=== "Kubernetes"
+
+    Install KubeVirt from upstream release manifests:
+
+    ```bash
+    export KUBEVIRT_VERSION=$(curl -s https://api.github.com/repos/kubevirt/kubevirt/releases/latest | grep tag_name | cut -d '"' -f 4)
+    kubectl apply -f "https://github.com/kubevirt/kubevirt/releases/download/${KUBEVIRT_VERSION}/kubevirt-operator.yaml"
+    kubectl apply -f "https://github.com/kubevirt/kubevirt/releases/download/${KUBEVIRT_VERSION}/kubevirt-cr.yaml"
+    ```
+
+    Wait for KubeVirt to be ready:
+
+    ```bash
+    kubectl wait kubevirt kubevirt -n kubevirt \
+      --for=condition=Available --timeout=600s
+    ```
+
 === "OpenShift"
 
     Create the namespace, OperatorGroup, and Subscription:
@@ -58,22 +75,5 @@
 
     ```bash
     kubectl wait hyperconverged kubevirt-hyperconverged -n openshift-cnv \
-      --for=condition=Available --timeout=600s
-    ```
-
-=== "Kubernetes"
-
-    Install KubeVirt from upstream release manifests:
-
-    ```bash
-    export KUBEVIRT_VERSION=$(curl -s https://api.github.com/repos/kubevirt/kubevirt/releases/latest | grep tag_name | cut -d '"' -f 4)
-    kubectl apply -f "https://github.com/kubevirt/kubevirt/releases/download/${KUBEVIRT_VERSION}/kubevirt-operator.yaml"
-    kubectl apply -f "https://github.com/kubevirt/kubevirt/releases/download/${KUBEVIRT_VERSION}/kubevirt-cr.yaml"
-    ```
-
-    Wait for KubeVirt to be ready:
-
-    ```bash
-    kubectl wait kubevirt kubevirt -n kubevirt \
       --for=condition=Available --timeout=600s
     ```

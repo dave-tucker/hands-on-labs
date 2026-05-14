@@ -1,5 +1,35 @@
 #### Install NMState
 
+=== "Kubernetes"
+
+    Install NMState from upstream manifests:
+
+    ```bash
+    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/nmstate.io_nmstates.yaml
+    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/namespace.yaml
+    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/service_account.yaml
+    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/role.yaml
+    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/role_binding.yaml
+    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/operator.yaml
+    ```
+
+    Create the NMState instance:
+
+    ```bash
+    kubectl apply -f - <<EOF
+    apiVersion: nmstate.io/v1
+    kind: NMState
+    metadata:
+      name: nmstate
+    EOF
+    ```
+
+    Wait for the handler pods to be ready:
+
+    ```bash
+    kubectl rollout status daemonset -n nmstate nmstate-handler --timeout=300s
+    ```
+
 === "OpenShift"
 
     Create the namespace, OperatorGroup, Subscription, and NMState instance:
@@ -54,34 +84,4 @@
 
     ```bash
     kubectl rollout status daemonset -n openshift-nmstate nmstate-handler --timeout=300s
-    ```
-
-=== "Kubernetes"
-
-    Install NMState from upstream manifests:
-
-    ```bash
-    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/nmstate.io_nmstates.yaml
-    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/namespace.yaml
-    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/service_account.yaml
-    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/role.yaml
-    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/role_binding.yaml
-    kubectl apply -f https://github.com/nmstate/kubernetes-nmstate/releases/latest/download/operator.yaml
-    ```
-
-    Create the NMState instance:
-
-    ```bash
-    kubectl apply -f - <<EOF
-    apiVersion: nmstate.io/v1
-    kind: NMState
-    metadata:
-      name: nmstate
-    EOF
-    ```
-
-    Wait for the handler pods to be ready:
-
-    ```bash
-    kubectl rollout status daemonset -n nmstate nmstate-handler --timeout=300s
     ```

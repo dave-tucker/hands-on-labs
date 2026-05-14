@@ -9,10 +9,6 @@
 - [Docker](https://docs.docker.com/engine/install/) (or Podman with Docker compatibility)
 - [containerlab](https://containerlab.dev/installation/)
 
-=== "OpenShift"
-
-    No additional tools required beyond the base prerequisites.
-
 === "Kubernetes"
 
     - [Helm](https://helm.sh/docs/intro/install/) — used to install OVN-Kubernetes,
@@ -74,10 +70,7 @@ topology deployment, and cluster provisioning via kcli.
 
 === "OpenShift"
 
-    ```bash
-    cd labs/<lab-name>
-    ./lab.sh up
-    ```
+    No additional tools required beyond the base prerequisites.
 
 === "Kubernetes"
 
@@ -98,3 +91,10 @@ After Day 1 deployment, each lab's documentation walks you through
 installing the required platform components (OVN-Kubernetes, NMState,
 MetalLB, KubeVirt, etc.) with step-by-step commands for both OpenShift
 and vanilla Kubernetes.
+
+=== "OpenShift"
+
+    ```bash
+    cd labs/<lab-name>
+    ./lab.sh up
+    ```
