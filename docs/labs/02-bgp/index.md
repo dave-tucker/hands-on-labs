@@ -30,22 +30,19 @@ graph TB
         L2[Leaf2<br/>AS 65002<br/>192.168.255.12/32]
     end
     
-    subgraph br-leaf1
-        M1[master<br/>AS 65000<br/>10.0.1.1<br/>192.168.255.1/32]
-        W1[worker<br/>AS 65000<br/>10.0.1.3<br/>192.168.255.2/32]
+    subgraph Cluster["Cluster Nodes (AS 65000)"]
+        M[master<br/>192.168.255.1/32<br/>10.0.1.1, 10.0.2.1]
+        W[worker<br/>192.168.255.2/32<br/>10.0.1.3, 10.0.2.3]
     end
     
-    subgraph br-leaf2
-        M2[master<br/>AS 65000<br/>10.0.2.1]
-        W2[worker<br/>AS 65000<br/>10.0.2.3]
-    end
+    S1 ---|10.10.1.0/31| L1
+    S1 ---|10.10.2.0/31| L2
     
-    S1 ---|eth1<br/>10.10.1.0/31| L1
-    S1 ---|eth2<br/>10.10.2.0/31| L2
-    L1 ---|eth2<br/>10.0.1.0/31| M1
-    L1 ---|eth3<br/>10.0.1.2/31| W1
-    L2 ---|eth2<br/>10.0.2.0/31| M2
-    L2 ---|eth3<br/>10.0.2.2/31| W2
+    L1 ---|10.0.1.0/31| M
+    L1 ---|10.0.1.2/31| W
+    
+    L2 ---|10.0.2.0/31| M
+    L2 ---|10.0.2.2/31| W
 ```
 
 ### Addressing
@@ -79,7 +76,13 @@ From the `labs/02-bgp` directory:
 === "Kubernetes"
 
     ```bash
-    CLUSTER_TYPE=k8s ./lab.sh up
+    ./lab.sh up
+    ```
+
+=== "OpenShift"
+
+    ```bash
+    CLUSTER_TYPE=openshift ./lab.sh up
     ```
 
 The script will:
@@ -97,12 +100,6 @@ export KUBECONFIG=$HOME/.kcli/clusters/bgp/auth/kubeconfig
 ### 2. Install platform components
 
 Install in order. Use the tab matching your cluster type.
-
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh up
-    ```
 
 --8<-- "install-ovn-kubernetes.md"
 
@@ -314,24 +311,17 @@ from spine1, `show ip bgp` and check the AS path for the pod network prefix.
 
 From the `labs/02-bgp` directory:
 
-=== "OpenShift"
-
-    ```bash
-    oc exec -n openshift-frr-k8s "$FRR_POD" -c frr -- \
-      vtysh -c "show bfd peers"
-    ```
-
 === "Kubernetes"
-
-    ```bash
-    CLUSTER_TYPE=k8s ./lab.sh down
-    ```
-
-This will destroy the containerlab topology, delete the kcli cluster, and
-remove the `br-leaf1` and `br-leaf2` bridges.
-
-=== "OpenShift"
 
     ```bash
     ./lab.sh down
     ```
+
+=== "OpenShift"
+
+    ```bash
+    CLUSTER_TYPE=openshift ./lab.sh down
+    ```
+
+This will destroy the containerlab topology, delete the kcli cluster, and
+remove the `br-leaf1` and `br-leaf2` bridges.

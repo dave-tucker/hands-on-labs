@@ -89,7 +89,13 @@ From the `labs/01-udn` directory:
 === "Kubernetes"
 
     ```bash
-    CLUSTER_TYPE=k8s ./lab.sh up
+    ./lab.sh up
+    ```
+
+=== "OpenShift"
+
+    ```bash
+    CLUSTER_TYPE=openshift ./lab.sh up
     ```
 
 The entry script will:
@@ -108,12 +114,6 @@ export KUBECONFIG=$HOME/.kcli/clusters/udn/auth/kubeconfig
 
 Install the following components in order. Each section has platform-specific
 instructions — select the tab matching your cluster type.
-
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh up
-    ```
 
 --8<-- "install-ovn-kubernetes.md"
 
@@ -367,7 +367,13 @@ From the `labs/01-udn` directory:
 === "Kubernetes"
 
     ```bash
-    CLUSTER_TYPE=k8s ./lab.sh down
+    ./lab.sh down
+    ```
+
+=== "OpenShift"
+
+    ```bash
+    CLUSTER_TYPE=openshift ./lab.sh down
     ```
 
 This will:
@@ -375,9 +381,3 @@ This will:
 1. Destroy the containerlab topology (r1, ext-host, host link auto-cleaned)
 2. Delete the kcli cluster and its VMs
 3. Remove the `br-vlan100` bridge
-
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh down
-    ```

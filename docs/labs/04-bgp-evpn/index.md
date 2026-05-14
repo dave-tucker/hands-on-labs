@@ -8,28 +8,62 @@ This lab extends the BGP CLOS fabric (lab 02) with EVPN (Ethernet VPN) support. 
 
 ### Topology
 
+#### Underlay: CLOS Fabric (IPv4 Unicast BGP)
+
 ```mermaid
 graph TB
     subgraph Spine
-        S1[Spine1<br/>AS 65413<br/>IPv4 unicast only]
+        S1[Spine1<br/>AS 65413]
     end
     
     subgraph Leaves
-        L1[Leaf1<br/>AS 65001<br/>192.168.255.11<br/>EVPN: ↔ Leaf2, ↔ ext-host<br/>eth2,3: cluster nodes<br/>eth4: ext-host]
-        L2[Leaf2<br/>AS 65002<br/>192.168.255.12<br/>EVPN: ↔ Leaf1, ↔ ext-host<br/>eth2,3: cluster nodes]
+        L1[Leaf1<br/>AS 65001<br/>192.168.255.11/32]
+        L2[Leaf2<br/>AS 65002<br/>192.168.255.12/32]
+    end
+    
+    subgraph Cluster["Cluster Nodes (AS 65000)"]
+        M[master<br/>192.168.255.1/32]
+        W[worker<br/>192.168.255.2/32]
     end
     
     subgraph External
-        EH[ext-host<br/>AS 65003<br/>192.168.255.13<br/>VTEP: 100.64.0.13<br/>br-evpn: 10.50.0.100/24]
+        EH[ext-host<br/>AS 65003<br/>192.168.255.13/32]
     end
     
-    S1 ---|eth1<br/>10.10.1.0/31| L1
-    S1 ---|eth2<br/>10.10.2.0/31| L2
-    L1 ---|eth4<br/>10.0.3.0/31| EH
-    L1 <-.EVPN.-> L2
-    L1 <-.EVPN.-> EH
-    L2 <-.EVPN.-> EH
+    S1 ---|10.10.1.0/31| L1
+    S1 ---|10.10.2.0/31| L2
+    
+    L1 ---|10.0.1.0/31| M
+    L1 ---|10.0.1.2/31| W
+    L1 ---|10.0.3.0/31| EH
+    
+    L2 ---|10.0.2.0/31| M
+    L2 ---|10.0.2.2/31| W
 ```
+
+The underlay provides IPv4 reachability between all BGP speakers using their loopback
+addresses. This fabric carries VXLAN-encapsulated EVPN traffic between VTEPs.
+
+#### Overlay: EVPN L2 Network (10.50.0.0/24)
+
+```mermaid
+graph TB
+    subgraph EVPN["L2 Network - VNI 100<br/>10.50.0.0/24"]
+        M[master pods<br/>VTEP: 100.64.0.1<br/>Pod IPs from 10.50.0.0/24]
+        W[worker pods<br/>VTEP: 100.64.0.2<br/>Pod IPs from 10.50.0.0/24]
+        EH[ext-host<br/>VTEP: 100.64.0.13<br/>10.50.0.100/24]
+    end
+    
+    M <-->|VXLAN tunnel<br/>Type-2/3 EVPN routes| W
+    M <-->|VXLAN tunnel<br/>Type-2/3 EVPN routes| EH
+    W <-->|VXLAN tunnel<br/>Type-2/3 EVPN routes| EH
+    
+    style EVPN fill:#f0f0f0,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
+```
+
+All endpoints share a flat L2 broadcast domain. MAC/IP addresses are distributed via
+BGP EVPN (Type-2 routes), and BUM traffic is handled via EVPN IMET (Type-3 routes).
+VXLAN tunnels connect the VTEPs over the underlay fabric.
 
 ### Addressing
 
@@ -90,7 +124,13 @@ From the `labs/04-bgp-evpn` directory:
 === "Kubernetes"
 
     ```bash
-    CLUSTER_TYPE=k8s ./lab.sh up
+    ./lab.sh up
+    ```
+
+=== "OpenShift"
+
+    ```bash
+    CLUSTER_TYPE=openshift ./lab.sh up
     ```
 
 The script will:
@@ -108,12 +148,6 @@ export KUBECONFIG=$HOME/.kcli/clusters/bgp-evpn/auth/kubeconfig
 ### 2. Install platform components
 
 Install in order. Use the tab matching your cluster type.
-
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh up
-    ```
 
 --8<-- "install-ovn-kubernetes.md"
 
@@ -481,21 +515,16 @@ Inspect different EVPN route types:
 
 From the `labs/04-bgp-evpn` directory:
 
-=== "OpenShift"
-
-    FRR-K8s is enabled via the Cluster Network Operator (handled by the patch
-    above). No separate install needed.
-
 === "Kubernetes"
-
-    ```bash
-    CLUSTER_TYPE=k8s ./lab.sh down
-    ```
-
-This will destroy the containerlab topology, delete the kcli cluster, and remove the `br-leaf1` and `br-leaf2` bridges.
-
-=== "OpenShift"
 
     ```bash
     ./lab.sh down
     ```
+
+=== "OpenShift"
+
+    ```bash
+    CLUSTER_TYPE=openshift ./lab.sh down
+    ```
+
+This will destroy the containerlab topology, delete the kcli cluster, and remove the `br-leaf1` and `br-leaf2` bridges.

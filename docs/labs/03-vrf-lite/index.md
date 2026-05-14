@@ -22,38 +22,47 @@ validate end-to-end connectivity to the pods in the other tenant.
 
 ```mermaid
 graph TB
-    subgraph VRF-tenant1["VRF: tenant1"]
-        L1[l1 site<br/>10.100.2.2]
-        R1T1[R1<br/>10.100.2.1]
-        CNT1[Cluster Node<br/>172.19.0.10<br/>VRF: tenant1]
+    subgraph External["External Sites"]
+        L1[l1<br/>10.100.2.2]
+        L2[l2<br/>10.200.2.2]
+    end
+    
+    subgraph Physical["Physical Infrastructure<br/>172.19.0.0/24 peering link"]
+        R1[R1 Router<br/>AS 65000<br/>172.19.0.1<br/>tenant1: 10.100.2.1<br/>tenant2: 10.200.2.1]
+        
+        subgraph Bridges["br-tenant1 / br-tenant2"]
+            CN[Cluster Node<br/>ctlplane-0<br/>172.19.0.10<br/>AS 65001]
+        end
+    end
+    
+    subgraph Cluster["Cluster Workloads"]
         P1[tenant1 pods<br/>10.100.1.0/24]
-        
-        L1 ---|10.100.2.0/24| R1T1
-        R1T1 ---|BGP peering<br/>172.19.0.0/24<br/>AS 65000 ↔ AS 65001| CNT1
-        CNT1 --- P1
-    end
-    
-    subgraph VRF-tenant2["VRF: tenant2"]
-        L2[l2 site<br/>10.200.2.2]
-        R1T2[R1<br/>10.200.2.1]
-        CNT2[Cluster Node<br/>172.19.0.10<br/>VRF: tenant2]
         P2[tenant2 pods<br/>10.200.1.0/24]
-        
-        L2 ---|10.200.2.0/24| R1T2
-        R1T2 ---|BGP peering<br/>172.19.0.0/24<br/>AS 65000 ↔ AS 65001| CNT2
-        CNT2 --- P2
     end
     
-    style VRF-tenant1 fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
-    style VRF-tenant2 fill:#fff0e1,stroke:#cc6600,stroke-width:2px
+    L1 -.->|10.100.2.0/24| R1
+    L2 -.->|10.200.2.0/24| R1
+    
+    R1 <-.->|BGP session in VRF tenant1<br/>AS 65000 ↔ AS 65001| CN
+    R1 <-.->|BGP session in VRF tenant2<br/>AS 65000 ↔ AS 65001| CN
+    
+    CN -.->|VRF tenant1| P1
+    CN -.->|VRF tenant2| P2
+    
+    style L1 fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
+    style P1 fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
+    style L2 fill:#fff0e1,stroke:#cc6600,stroke-width:2px
+    style P2 fill:#fff0e1,stroke:#cc6600,stroke-width:2px
 ```
 
 !!! info "VRF Isolation"
-    The diagram shows two completely isolated routing domains. Even though both
-    VRFs share the same physical infrastructure (R1 and the cluster node), they
-    maintain separate routing tables. Traffic from tenant1 pods (10.100.1.0/24)
-    can only reach the l1 site (10.100.2.0/24), and tenant2 pods (10.200.1.0/24)
-    can only reach the l2 site (10.200.2.0/24).
+    The diagram shows physical infrastructure (R1 router and cluster node connected
+    via 172.19.0.0/24) with VRF overlays. Two separate BGP peering sessions run over
+    the same physical link - one in VRF tenant1 context and one in VRF tenant2 context.
+    Each VRF maintains completely isolated routing tables. Dotted lines indicate VRF
+    membership: blue for tenant1, orange for tenant2. Traffic from tenant1 pods
+    (10.100.1.0/24) can only reach l1 site (10.100.2.0/24), and tenant2 pods
+    (10.200.1.0/24) can only reach l2 site (10.200.2.0/24).
 
 ## Addressing
 
@@ -88,7 +97,13 @@ From the `labs/03-vrf-lite` directory:
 === "Kubernetes"
 
     ```bash
-    CLUSTER_TYPE=k8s ./lab.sh up
+    ./lab.sh up
+    ```
+
+=== "OpenShift"
+
+    ```bash
+    CLUSTER_TYPE=openshift ./lab.sh up
     ```
 
 The deploy script will:
@@ -106,12 +121,6 @@ export KUBECONFIG=$HOME/.kcli/clusters/vrf-lite/auth/kubeconfig
 ### 2. Install platform components
 
 Install the components in order.
-
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh up
-    ```
 
 --8<-- "install-ovn-kubernetes.md"
 
@@ -465,18 +474,16 @@ From 10.100.1.2 icmp_seq=3 Destination Host Unreachable
 
 From the `labs/03-vrf-lite` directory:
 
-=== "OpenShift"
-
-    ```bash
-    FRR_POD=$(oc get pods -n openshift-frr-k8s -o name | head -1)
-    oc exec -n openshift-frr-k8s "$FRR_POD" -c frr -- \
-      vtysh -c "show ip bgp vrf tenant1"
-    ```
-
 === "Kubernetes"
 
     ```bash
-    CLUSTER_TYPE=k8s ./lab.sh down
+    ./lab.sh down
+    ```
+
+=== "OpenShift"
+
+    ```bash
+    CLUSTER_TYPE=openshift ./lab.sh down
     ```
 
 This will:
@@ -484,9 +491,3 @@ This will:
 1. Destroy the containerlab topology
 2. Delete the kcli cluster and its VMs
 3. Remove the `br-tenant1` and `br-tenant2` bridges
-
-=== "OpenShift"
-
-    ```bash
-    ./lab.sh down
-    ```
