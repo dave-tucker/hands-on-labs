@@ -1,0 +1,24 @@
+---
+apiVersion: k8s.ovn.org/v1
+kind: ClusterUserDefinedNetwork
+metadata:
+  name: evpn-l2
+  labels:
+    evpn: enabled
+spec:
+  namespaceSelector:
+    matchLabels:
+      network: evpn-l2
+  network:
+    topology: Layer2
+    layer2:
+      role: Primary
+      subnets:
+        - 10.50.0.0/24
+      ipam:
+        lifecycle: Persistent
+    transport: EVPN
+    evpn:
+      vtep: evpn-vteps
+      macVRF:
+        vni: 100

@@ -1,0 +1,19 @@
+---
+apiVersion: k8s.ovn.org/v1
+kind: RouteAdvertisements
+metadata:
+  name: evpn-cudn-advertisement
+spec:
+  targetVRF: evpn-l2
+  advertisements:
+    - PodNetwork
+  nodeSelector: {}
+  frrConfigurationSelector:
+    matchLabels:
+      use-for-advertisements: "true"
+  networkSelectors:
+    - networkSelectionType: ClusterUserDefinedNetworks
+      clusterUserDefinedNetworkSelector:
+        networkSelector:
+          matchLabels:
+            evpn: enabled

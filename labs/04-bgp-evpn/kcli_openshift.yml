@@ -1,0 +1,17 @@
+cluster: bgp-evpn
+domain: labs.ovn-k8s.local
+version: ci
+tag: '4.22.0-0.ci-2026-05-14-025035'
+ctlplanes: 1
+workers: 1
+memory: 24576
+numcpus: 8
+disk_size: 60
+network: default
+network_type: OVNKubernetes
+pull_secret: ~/pull_secret_with_ci.json
+featureset: TechPreviewNoUpgrade
+
+extra_networks:
+- br-leaf1
+- br-leaf2

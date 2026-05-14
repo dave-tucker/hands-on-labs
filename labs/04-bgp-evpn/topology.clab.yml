@@ -1,0 +1,64 @@
+name: bgp-evpn
+
+mgmt:
+  network: clab
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  nodes:
+    br-leaf1:
+      kind: bridge
+    br-leaf2:
+      kind: bridge
+
+    spine1:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - config/spine1-frr.conf:/etc/frr/frr.conf
+        - config/daemons-spine1:/etc/frr/daemons
+        - config/vtysh.conf:/etc/frr/vtysh.conf
+        - config/spine1-start.sh:/spine1-start.sh
+      cmd: /bin/sh /spine1-start.sh
+
+    leaf1:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - config/leaf1-frr.conf:/etc/frr/frr.conf
+        - config/daemons-leaf1:/etc/frr/daemons
+        - config/vtysh.conf:/etc/frr/vtysh.conf
+        - config/leaf1-start.sh:/leaf1-start.sh
+      cmd: /bin/sh /leaf1-start.sh
+
+    leaf2:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - config/leaf2-frr.conf:/etc/frr/frr.conf
+        - config/daemons-leaf2:/etc/frr/daemons
+        - config/vtysh.conf:/etc/frr/vtysh.conf
+        - config/leaf2-start.sh:/leaf2-start.sh
+      cmd: /bin/sh /leaf2-start.sh
+
+    ext-host:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - config/ext-host-frr.conf:/etc/frr/frr.conf
+        - config/daemons-ext-host:/etc/frr/daemons
+        - config/vtysh.conf:/etc/frr/vtysh.conf
+        - config/ext-host-start.sh:/ext-host-start.sh
+      cmd: /bin/sh /ext-host-start.sh
+
+  links:
+    # Core links
+    - endpoints: ["spine1:eth1", "leaf1:eth1"]
+    - endpoints: ["spine1:eth2", "leaf2:eth1"]
+    # Cluster node links (to bridges)
+    - endpoints: ["leaf1:eth2", "br-leaf1:leaf1a"]
+    - endpoints: ["leaf1:eth3", "br-leaf1:leaf1b"]
+    - endpoints: ["leaf2:eth2", "br-leaf2:leaf2a"]
+    - endpoints: ["leaf2:eth3", "br-leaf2:leaf2b"]
+    # ext-host link
+    - endpoints: ["leaf1:eth4", "ext-host:eth1"]

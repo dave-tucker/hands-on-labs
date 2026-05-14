@@ -1,0 +1,9 @@
+# Containerlab generated files
+clab-bgp-evpn/
+
+# Downloaded binaries
+openshift-install
+
+# Status files
+READY.md
+STATUS.md
