@@ -17,8 +17,8 @@ graph TB
     end
     
     subgraph Leaves
-        L1[Leaf1<br/>AS 65001<br/>192.168.255.11/32]
-        L2[Leaf2<br/>AS 65002<br/>192.168.255.12/32]
+        L1[Leaf1<br/>AS 65000<br/>192.168.255.11/32]
+        L2[Leaf2<br/>AS 65000<br/>192.168.255.12/32]
     end
     
     subgraph Cluster["Cluster Nodes (AS 65000)"]
@@ -27,7 +27,7 @@ graph TB
     end
     
     subgraph External
-        EH[ext-host<br/>AS 65003<br/>192.168.255.13/32]
+        EH[ext-host<br/>10.50.0.100/24]
     end
     
     S1 ---|10.10.1.0/31| L1

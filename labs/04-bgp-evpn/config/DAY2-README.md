@@ -13,13 +13,13 @@ This guide covers the Day 2 configuration steps to enable BGP-EVPN on an OpenShi
 
 ```
                     Spine1 (AS 65413)
-                    [IPv4 unicast only]
+                    [eBGP underlay, iBGP EVPN]
                           |
               +-----------+-----------+
               |                       |
-         Leaf1 (AS 65001)       Leaf2 (AS 65002)
+         Leaf1 (AS 65000)       Leaf2 (AS 65000)
          192.168.255.11         192.168.255.12
-         EVPN: ↔ nodes          EVPN: ↔ nodes
+         iBGP EVPN: ↔ nodes     iBGP EVPN: ↔ nodes
               |                       |
          +----+----+             +----+----+
          |         |             |         |
@@ -39,12 +39,14 @@ This guide covers the Day 2 configuration steps to enable BGP-EVPN on an OpenShi
 
 ### BGP Configuration
 
-- **Underlay**: eBGP IPv4 unicast over loopbacks with BFD
-  - Cluster nodes (AS 65000) peer with Leaf1/Leaf2
+- **Underlay**: iBGP IPv4 unicast over loopbacks with BFD
+  - Cluster nodes (AS 65000) peer with Leaf1/Leaf2 (AS 65000)
+  - Leaves use eBGP with Spine1 (AS 65413) for core routing
   - Static routes for loopback reachability via P2P links
-- **Overlay**: eBGP L2VPN EVPN over loopbacks
-  - VNI 100 for EVPN CUDN (10.50.0.0/24)
-  - MAC-VRF only (Type-2 and Type-3 routes)
+- **Overlay**: iBGP L2VPN EVPN over loopbacks (AS 65000)
+  - VNI 100/101 for EVPN Tenant 1 (10.50.0.0/24)
+  - VNI 200/201 for EVPN Tenant 2 (10.60.0.0/24)
+  - MAC-VRF (Type-2/3) and IP-VRF (Type-5) routes
 
 ## Deployment Steps
 
