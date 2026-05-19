@@ -26,14 +26,8 @@ spec:
        address-family ipv4 unicast
         network 100.64.0.1/32
         neighbor 192.168.255.10 activate
-        no neighbor 192.168.255.10 route-map 192.168.255.10-out out
-        no neighbor 192.168.255.10 route-map 192.168.255.10-in in
         neighbor 192.168.255.11 activate
-        no neighbor 192.168.255.11 route-map 192.168.255.11-out out
-        no neighbor 192.168.255.11 route-map 192.168.255.11-in in
         neighbor 192.168.255.12 activate
-        no neighbor 192.168.255.12 route-map 192.168.255.12-out out
-        no neighbor 192.168.255.12 route-map 192.168.255.12-in in
        exit-address-family
       exit
   bgp:
@@ -74,14 +68,8 @@ spec:
        address-family ipv4 unicast
         network 100.64.0.2/32
         neighbor 192.168.255.10 activate
-        no neighbor 192.168.255.10 route-map 192.168.255.10-out out
-        no neighbor 192.168.255.10 route-map 192.168.255.10-in in
         neighbor 192.168.255.11 activate
-        no neighbor 192.168.255.11 route-map 192.168.255.11-out out
-        no neighbor 192.168.255.11 route-map 192.168.255.11-in in
         neighbor 192.168.255.12 activate
-        no neighbor 192.168.255.12 route-map 192.168.255.12-out out
-        no neighbor 192.168.255.12 route-map 192.168.255.12-in in
        exit-address-family
       exit
   bgp:
