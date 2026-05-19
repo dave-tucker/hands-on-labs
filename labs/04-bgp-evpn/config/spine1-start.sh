@@ -39,8 +39,17 @@ ip link add vxlan201 type vxlan \
   dstport 4789 \
   nolearning
 
-ip link set vxlan201 master tenant2-ipvrf
+# Create bridge for L3VNI (required for Type-5 route advertisement)
+ip link add br-l3vni201 type bridge
+ip link set br-l3vni201 master tenant2-ipvrf
+ip link set br-l3vni201 up
+
+# Add VXLAN to bridge
+ip link set vxlan201 master br-l3vni201
 ip link set vxlan201 up
+
+# Add SVI IP to bridge (required for Type-5 route generation)
+ip addr add 10.60.0.254/24 dev br-l3vni201
 
 PATH="/usr/lib/frr:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 if command -v watchfrr >/dev/null 2>&1; then
