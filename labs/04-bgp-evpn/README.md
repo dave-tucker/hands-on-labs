@@ -50,14 +50,15 @@ CLUSTER_TYPE=k8s ./lab.sh down
 
 ## Topology
 
-Spine1 (AS 65413) - eBGP IPv4 underlay with leaves, iBGP EVPN with leaves (Type-5 routes)
-Leaf1, Leaf2 (AS 65000) - iBGP with cluster nodes and spine1 for EVPN, eBGP with spine1 for underlay
-ext-host - L2-only endpoint, single-homed to Leaf1 (Tenant 1, 10.50.0.100/24)
-ext-host2 - L2-only endpoint, single-homed to Leaf2 (Tenant 2 L2, 10.60.0.100/24)
-ext-host3 (AS 65005) - eBGP IPv4 with Spine1, advertises 10.70.0.0/24 (Tenant 2 L3)
-Cluster nodes (AS 65000) - iBGP with leaves for IPv4 underlay and EVPN overlay
+All devices use AS 65000 (iBGP throughout):
+- Spine1 - Route reflector for EVPN, advertises Type-5 routes for ext-host3's network
+- Leaf1, Leaf2 - Route reflectors for cluster nodes, participate in EVPN mesh
+- Cluster nodes (master, worker) - EVPN endpoints for pod networks
+- ext-host - L2-only endpoint, single-homed to Leaf1 (Tenant 1, 10.50.0.100/24)
+- ext-host2 - L2-only endpoint, single-homed to Leaf2 (Tenant 2 L2, 10.60.0.100/24)
+- ext-host3 - iBGP with Spine1, advertises 10.70.0.0/24 (Tenant 2 L3)
 
-iBGP EVPN mesh: Spine1 ↔ Leaf1 ↔ Leaf2 ↔ cluster nodes (master, worker)
+iBGP EVPN mesh: Spine1 ↔ Leaf1 ↔ Leaf2 ↔ cluster nodes (master, worker) ↔ ext-host3 (via spine1)
 
 ## Addressing
 

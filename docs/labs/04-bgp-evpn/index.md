@@ -13,7 +13,7 @@ This lab extends the BGP CLOS fabric (lab 02) with EVPN (Ethernet VPN) support. 
 ```mermaid
 graph TB
     subgraph Spine
-        S1[Spine1<br/>AS 65413]
+        S1[Spine1<br/>AS 65000]
     end
     
     subgraph Leaves

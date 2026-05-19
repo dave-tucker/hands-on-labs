@@ -12,8 +12,8 @@ This guide covers the Day 2 configuration steps to enable BGP-EVPN on an OpenShi
 ## Architecture Overview
 
 ```
-                    Spine1 (AS 65413)
-                    [eBGP underlay, iBGP EVPN]
+                    Spine1 (AS 65000)
+                    [Route reflector]
                           |
               +-----------+-----------+
               |                       |
@@ -39,11 +39,15 @@ This guide covers the Day 2 configuration steps to enable BGP-EVPN on an OpenShi
 
 ### BGP Configuration
 
+All devices use AS 65000 (iBGP throughout):
 - **Underlay**: iBGP IPv4 unicast over loopbacks with BFD
-  - Cluster nodes (AS 65000) peer with Leaf1/Leaf2 (AS 65000)
-  - Leaves use eBGP with Spine1 (AS 65413) for core routing
+  - Cluster nodes peer with Leaf1/Leaf2
+  - Leaves peer with Spine1
+  - ext-host3 peers with Spine1
   - Static routes for loopback reachability via P2P links
-- **Overlay**: iBGP L2VPN EVPN over loopbacks (AS 65000)
+- **Overlay**: iBGP L2VPN EVPN over loopbacks
+  - Spine1 acts as route reflector
+  - Leaves act as route reflectors for cluster nodes
   - VNI 100/101 for EVPN Tenant 1 (10.50.0.0/24)
   - VNI 200/201 for EVPN Tenant 2 (10.60.0.0/24)
   - MAC-VRF (Type-2/3) and IP-VRF (Type-5) routes
