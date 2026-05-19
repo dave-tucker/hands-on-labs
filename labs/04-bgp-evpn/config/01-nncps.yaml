@@ -54,6 +54,9 @@ spec:
         - destination: 192.168.255.2/32
           next-hop-interface: ens4
           next-hop-address: 10.0.1.0
+        - destination: 192.168.255.10/32
+          next-hop-interface: ens4
+          next-hop-address: 10.0.1.0
         - destination: 192.168.255.11/32
           next-hop-interface: ens4
           next-hop-address: 10.0.1.0
@@ -107,6 +110,9 @@ spec:
     routes:
       config:
         - destination: 192.168.255.1/32
+          next-hop-interface: ens4
+          next-hop-address: 10.0.1.2
+        - destination: 192.168.255.10/32
           next-hop-interface: ens4
           next-hop-address: 10.0.1.2
         - destination: 192.168.255.11/32

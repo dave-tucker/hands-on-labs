@@ -38,6 +38,10 @@ spec:
       - asn: 65000
         id: 192.168.255.1
         neighbors:
+          - address: 192.168.255.10
+            asn: 65000
+            sourceaddress: 192.168.255.1
+            bfdProfile: default
           - address: 192.168.255.11
             asn: 65000
             sourceaddress: 192.168.255.1
@@ -79,6 +83,10 @@ spec:
       - asn: 65000
         id: 192.168.255.2
         neighbors:
+          - address: 192.168.255.10
+            asn: 65000
+            sourceaddress: 192.168.255.2
+            bfdProfile: default
           - address: 192.168.255.11
             asn: 65000
             sourceaddress: 192.168.255.2
