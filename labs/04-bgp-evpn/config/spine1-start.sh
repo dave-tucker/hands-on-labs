@@ -29,6 +29,9 @@ ip addr add 100.64.0.10/32 dev lo-vtep 2>/dev/null || true
 ip link add tenant2-ipvrf type vrf table 10
 ip link set tenant2-ipvrf up
 
+# Add eth3 to VRF (for ext-host3 connectivity)
+ip link set eth3 master tenant2-ipvrf
+
 # Create L3VNI VXLAN interface
 ip link add vxlan201 type vxlan \
   id 201 \
