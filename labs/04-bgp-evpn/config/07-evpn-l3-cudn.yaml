@@ -2,26 +2,26 @@
 apiVersion: k8s.ovn.org/v1
 kind: ClusterUserDefinedNetwork
 metadata:
-  name: evpn-l2
+  name: evpn-l3
   labels:
     evpn: enabled
-    tenant: evpn-l2
+    tenant: evpn-l3
 spec:
   namespaceSelector:
     matchLabels:
-      network: evpn-l2
+      network: evpn-l3
   network:
     topology: Layer2
     layer2:
       role: Primary
       subnets:
-        - 10.50.0.0/24
+        - 10.60.0.0/24
       ipam:
         lifecycle: Persistent
     transport: EVPN
     evpn:
       vtep: evpn-vteps
       macVRF:
-        vni: 100
+        vni: 200
       ipVRF:
-        vni: 101
+        vni: 201

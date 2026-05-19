@@ -1,0 +1,83 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: network-config
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: network-config
+  template:
+    metadata:
+      labels:
+        app: network-config
+    spec:
+      hostNetwork: true
+      hostPID: true
+      tolerations:
+      - operator: Exists
+      initContainers:
+      - name: configure-network
+        image: quay.io/openshift/origin-network-tools:latest
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -ex
+
+          # Determine node type and set variables
+          if [[ "$(hostname)" == *"ctlplane"* ]]; then
+            BGP_LOOPBACK="192.168.255.1"
+            VTEP_LOOPBACK="100.64.0.1"
+            ENS4_IP="10.0.1.1"
+            ENS5_IP="10.0.2.1"
+            ROUTE_TO_PEER="192.168.255.2"
+            PEER_ENS4="10.0.1.0"
+            PEER_ENS5="10.0.2.0"
+            echo "Configuring control plane node"
+          elif [[ "$(hostname)" == *"worker"* ]]; then
+            BGP_LOOPBACK="192.168.255.2"
+            VTEP_LOOPBACK="100.64.0.2"
+            ENS4_IP="10.0.1.3"
+            ENS5_IP="10.0.2.3"
+            ROUTE_TO_PEER="192.168.255.1"
+            PEER_ENS4="10.0.1.2"
+            PEER_ENS5="10.0.2.2"
+            echo "Configuring worker node"
+          else
+            echo "Unknown node type, exiting"
+            exit 1
+          fi
+
+          # Create lo-bgp interface
+          ip link add lo-bgp type dummy 2>/dev/null || true
+          ip link set lo-bgp up
+          ip addr add ${BGP_LOOPBACK}/32 dev lo-bgp 2>/dev/null || true
+
+          # Create lo-vtep interface
+          ip link add lo-vtep type dummy 2>/dev/null || true
+          ip link set lo-vtep up
+          ip addr add ${VTEP_LOOPBACK}/32 dev lo-vtep 2>/dev/null || true
+
+          # Configure ens4 (to leaf1)
+          ip link set ens4 up
+          ip addr add ${ENS4_IP}/31 dev ens4 2>/dev/null || true
+
+          # Configure ens5 (to leaf2)
+          ip link set ens5 up
+          ip addr add ${ENS5_IP}/31 dev ens5 2>/dev/null || true
+
+          # Add static routes
+          ip route add ${ROUTE_TO_PEER}/32 via ${PEER_ENS4} dev ens4 2>/dev/null || true
+          ip route add 192.168.255.11/32 via ${PEER_ENS4} dev ens4 2>/dev/null || true
+          ip route add 192.168.255.12/32 via ${PEER_ENS5} dev ens5 2>/dev/null || true
+
+          echo "Network configuration complete for $(hostname)"
+        securityContext:
+          privileged: true
+      containers:
+      - name: sleep
+        image: quay.io/openshift/origin-network-tools:latest
+        command: ["sleep", "infinity"]
+        securityContext:
+          privileged: true

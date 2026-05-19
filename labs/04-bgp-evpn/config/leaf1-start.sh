@@ -21,6 +21,28 @@ ip link set eth2 up
 ip link set eth3 up
 ip link set eth4 up
 
+# Create VTEP loopback
+ip link add lo-vtep type dummy 2>/dev/null || true
+ip link set lo-vtep up
+ip addr add 100.64.0.11/32 dev lo-vtep 2>/dev/null || true
+
+# Create VXLAN interface for VNI 100 (tenant 1)
+ip link add vxlan100 type vxlan \
+  id 100 \
+  local 100.64.0.11 \
+  dstport 4789 \
+  nolearning
+
+ip link set vxlan100 up
+
+# Create bridge for VNI 100
+ip link add br-vni100 type bridge
+ip link set br-vni100 up
+
+# Add VXLAN and ext-host interface to bridge
+ip link set vxlan100 master br-vni100
+ip link set eth4 master br-vni100
+
 PATH="/usr/lib/frr:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 if command -v watchfrr >/dev/null 2>&1; then
   exec watchfrr -F traditional zebra bgpd bfdd staticd

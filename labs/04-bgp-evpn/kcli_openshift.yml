@@ -1,7 +1,7 @@
 cluster: bgp-evpn
 domain: labs.ovn-k8s.local
-version: ci
-tag: '4.22.0-0.ci-2026-05-14-025035'
+version: stable
+tag: '4.22.0-rc.4'
 ctlplanes: 1
 workers: 1
 memory: 24576

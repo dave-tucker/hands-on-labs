@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: evpn-pod-master
+  namespace: evpn-l3
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+  containers:
+  - name: network-tools
+    image: quay.io/openshift/origin-network-tools:latest
+    command: ["/bin/bash", "-c", "sleep infinity"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: evpn-pod-worker
+  namespace: evpn-l3
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+  containers:
+  - name: network-tools
+    image: quay.io/openshift/origin-network-tools:latest
+    command: ["/bin/bash", "-c", "sleep infinity"]

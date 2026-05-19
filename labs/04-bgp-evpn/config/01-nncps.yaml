@@ -23,6 +23,14 @@ spec:
           address:
             - ip: 192.168.255.1
               prefix-length: 32
+      - name: lo-vtep
+        type: dummy
+        state: up
+        ipv4:
+          enabled: true
+          address:
+            - ip: 100.64.0.1
+              prefix-length: 32
       - name: ens4
         type: ethernet
         state: up
@@ -62,6 +70,14 @@ spec:
     kubernetes.io/hostname: bgp-evpn-worker-0.labs.ovn-k8s.local
   desiredState:
     interfaces:
+      - name: lo-vtep
+        type: dummy
+        state: up
+        ipv4:
+          enabled: true
+          address:
+            - ip: 100.64.0.2
+              prefix-length: 32
       - name: lo-bgp
         type: dummy
         state: up

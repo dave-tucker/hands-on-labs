@@ -2,9 +2,9 @@
 apiVersion: k8s.ovn.org/v1
 kind: RouteAdvertisements
 metadata:
-  name: evpn-cudn-advertisement
+  name: evpn-l3-advertisement
 spec:
-  targetVRF: evpn-l2
+  targetVRF: evpn-l3
   advertisements:
     - PodNetwork
   nodeSelector: {}
@@ -16,4 +16,4 @@ spec:
       clusterUserDefinedNetworkSelector:
         networkSelector:
           matchLabels:
-            tenant: evpn-l2
+            tenant: evpn-l3

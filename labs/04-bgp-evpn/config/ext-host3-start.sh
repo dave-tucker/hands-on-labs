@@ -11,15 +11,16 @@ while [ $wait -lt 30 ]; do
   wait=$((wait + 1))
 done
 if ! [ -d /sys/class/net/eth1 ]; then
-  echo "ext-host-start.sh: eth1 not found after 30s" >&2
+  echo "ext-host3-start.sh: eth1 not found after 30s" >&2
   exec sleep infinity
 fi
 
 ip link set lo up
 ip link set eth1 up
 
-# Add IP to eth1 (connected to leaf1 bridge)
-ip addr add 10.50.0.100/24 dev eth1
+# Create dummy interface for the subnet
+ip link add lo-subnet type dummy 2>/dev/null || true
+ip link set lo-subnet up
 
 PATH="/usr/lib/frr:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 if command -v watchfrr >/dev/null 2>&1; then
@@ -29,6 +30,6 @@ elif [ -x /usr/lib/frr/watchfrr ]; then
 elif [ -x /usr/libexec/frr/watchfrr ]; then
   exec /usr/libexec/frr/watchfrr -F traditional zebra bgpd bfdd staticd
 else
-  echo "ext-host-start.sh: watchfrr not found" >&2
+  echo "ext-host3-start.sh: watchfrr not found" >&2
   exec sleep infinity
 fi

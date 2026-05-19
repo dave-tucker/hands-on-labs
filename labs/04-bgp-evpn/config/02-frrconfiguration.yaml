@@ -1,5 +1,5 @@
 # BGP over loopbacks: neighbors are Leaf1 (192.168.255.11) and Leaf2
-# (192.168.255.12). ebgpMultiHop and BFD so sessions run over loopbacks.
+# (192.168.255.12). Now using iBGP (all AS 65000) for EVPN simplicity.
 # Static routes (NNCP) must be applied first so nodes can reach leaf loopbacks.
 #
 # OpenShift: namespace openshift-frr-k8s. Vanilla K8s: use metallb-system or
@@ -19,33 +19,33 @@ spec:
   nodeSelector:
     matchLabels:
       node-role.kubernetes.io/control-plane: ""
+  raw:
+    priority: 20
+    rawConfig: |
+      router bgp 65000
+       address-family ipv4 unicast
+        network 100.64.0.1/32
+        neighbor 192.168.255.11 activate
+        no neighbor 192.168.255.11 route-map 192.168.255.11-out out
+        no neighbor 192.168.255.11 route-map 192.168.255.11-in in
+        neighbor 192.168.255.12 activate
+        no neighbor 192.168.255.12 route-map 192.168.255.12-out out
+        no neighbor 192.168.255.12 route-map 192.168.255.12-in in
+       exit-address-family
+      exit
   bgp:
     routers:
       - asn: 65000
         id: 192.168.255.1
         neighbors:
           - address: 192.168.255.11
-            asn: 65001
-            ebgpMultiHop: true
+            asn: 65000
             sourceaddress: 192.168.255.1
             bfdProfile: default
-            toReceive:
-              allowed:
-                mode: all
-            toAdvertise:
-              allowed:
-                mode: all
           - address: 192.168.255.12
-            asn: 65002
-            ebgpMultiHop: true
+            asn: 65000
             sourceaddress: 192.168.255.1
             bfdProfile: default
-            toReceive:
-              allowed:
-                mode: all
-            toAdvertise:
-              allowed:
-                mode: all
     bfdProfiles:
       - name: default
 ---
@@ -60,32 +60,32 @@ spec:
   nodeSelector:
     matchLabels:
       node-role.kubernetes.io/worker: ""
+  raw:
+    priority: 20
+    rawConfig: |
+      router bgp 65000
+       address-family ipv4 unicast
+        network 100.64.0.2/32
+        neighbor 192.168.255.11 activate
+        no neighbor 192.168.255.11 route-map 192.168.255.11-out out
+        no neighbor 192.168.255.11 route-map 192.168.255.11-in in
+        neighbor 192.168.255.12 activate
+        no neighbor 192.168.255.12 route-map 192.168.255.12-out out
+        no neighbor 192.168.255.12 route-map 192.168.255.12-in in
+       exit-address-family
+      exit
   bgp:
     routers:
       - asn: 65000
         id: 192.168.255.2
         neighbors:
           - address: 192.168.255.11
-            asn: 65001
-            ebgpMultiHop: true
+            asn: 65000
             sourceaddress: 192.168.255.2
             bfdProfile: default
-            toReceive:
-              allowed:
-                mode: all
-            toAdvertise:
-              allowed:
-                mode: all
           - address: 192.168.255.12
-            asn: 65002
-            ebgpMultiHop: true
+            asn: 65000
             sourceaddress: 192.168.255.2
             bfdProfile: default
-            toReceive:
-              allowed:
-                mode: all
-            toAdvertise:
-              allowed:
-                mode: all
     bfdProfiles:
       - name: default
