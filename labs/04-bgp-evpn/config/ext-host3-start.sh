@@ -1,6 +1,7 @@
 #!/bin/sh
+# ext-host3: plain L3 host behind leaf3's VRF (host_l3 pattern).
+# No FRR — leaf3 owns the VRF and generates the EVPN Type-5 for 10.70.0.0/24.
 PATH=/usr/sbin:/usr/bin:/sbin:/bin:${PATH}
-set -e
 
 wait=0
 while [ $wait -lt 30 ]; do
@@ -18,18 +19,17 @@ fi
 ip link set lo up
 ip link set eth1 up
 
-# Create dummy interface for the subnet
-ip link add lo-subnet type dummy 2>/dev/null || true
-ip link set lo-subnet up
+# P2P link to leaf3 VRF (leaf3 eth2: 10.0.5.0/31)
+ip addr add 10.0.5.1/31 dev eth1
 
-PATH="/usr/lib/frr:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
-if command -v watchfrr >/dev/null 2>&1; then
-  exec watchfrr -F traditional zebra bgpd bfdd staticd
-elif [ -x /usr/lib/frr/watchfrr ]; then
-  exec /usr/lib/frr/watchfrr -F traditional zebra bgpd bfdd staticd
-elif [ -x /usr/libexec/frr/watchfrr ]; then
-  exec /usr/libexec/frr/watchfrr -F traditional zebra bgpd bfdd staticd
-else
-  echo "ext-host3-start.sh: watchfrr not found" >&2
-  exec sleep infinity
-fi
+# Default route via leaf3 VRF gateway — all traffic (to cluster pods via
+# Type-5 EVPN) goes this way; leaf3 handles the L3VNI encapsulation.
+ip route add default via 10.0.5.0 dev eth1
+
+# Simulated external host address — this is what cluster pods will ping.
+# Leaf3 advertises 10.70.0.0/24 as a Type-5 EVPN route via a VRF static route.
+ip link add lo-ext type dummy 2>/dev/null || true
+ip link set lo-ext up
+ip addr add 10.70.0.100/24 dev lo-ext
+
+exec sleep infinity

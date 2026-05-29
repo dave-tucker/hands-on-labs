@@ -36,6 +36,9 @@ This guide covers the Day 2 configuration steps to enable BGP-EVPN on an OpenShi
 | Leaf1 | 192.168.255.11/32 | - | eth2: 10.0.1.0/31, eth3: 10.0.1.2/31 |
 | Leaf2 | 192.168.255.12/32 | - | eth2: 10.0.2.0/31, eth3: 10.0.2.2/31 |
 | ext-host | 192.168.255.13/32 | 100.64.0.13/32 | - |
+| ext-host2 | 192.168.255.14/32 | 100.64.0.14/32 | - |
+| Leaf3 | 192.168.255.16/32 | 100.64.0.16/32 | eth1: 10.10.3.1/31, eth2: 10.0.5.0/31 (VRF) |
+| ext-host3 | n/a (dumb host) | n/a | eth1: 10.0.5.1/31, gw: 10.0.5.0, lo-ext: 10.70.0.100/24 |
 
 ### BGP Configuration
 

@@ -61,13 +61,20 @@ topology:
         - config/ext-host2-start.sh:/ext-host2-start.sh
       cmd: /bin/sh /ext-host2-start.sh
 
+    leaf3:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - config/leaf3-frr.conf:/etc/frr/frr.conf
+        - config/daemons-leaf3:/etc/frr/daemons
+        - config/vtysh.conf:/etc/frr/vtysh.conf
+        - config/leaf3-start.sh:/leaf3-start.sh
+      cmd: /bin/sh /leaf3-start.sh
+
     ext-host3:
       kind: linux
       image: quay.io/frrouting/frr:10.5.1
       binds:
-        - config/ext-host3-frr.conf:/etc/frr/frr.conf
-        - config/daemons-ext-host3:/etc/frr/daemons
-        - config/vtysh.conf:/etc/frr/vtysh.conf
         - config/ext-host3-start.sh:/ext-host3-start.sh
       cmd: /bin/sh /ext-host3-start.sh
 
@@ -83,4 +90,6 @@ topology:
     # ext-host links
     - endpoints: ["leaf1:eth4", "ext-host:eth1"]
     - endpoints: ["leaf2:eth4", "ext-host2:eth1"]
-    - endpoints: ["spine1:eth3", "ext-host3:eth1"]
+    # leaf3 core + host links
+    - endpoints: ["spine1:eth3", "leaf3:eth1"]
+    - endpoints: ["leaf3:eth2", "ext-host3:eth1"]

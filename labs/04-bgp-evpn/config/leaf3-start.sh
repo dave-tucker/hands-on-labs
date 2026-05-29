@@ -11,20 +11,39 @@ while [ $wait -lt 30 ]; do
   wait=$((wait + 1))
 done
 if ! [ -d /sys/class/net/eth1 ] || ! [ -d /sys/class/net/eth2 ]; then
-  echo "spine1-start.sh: eth1-eth2 not all found after 30s" >&2
+  echo "leaf3-start.sh: eth1-eth2 not found after 30s" >&2
   exec sleep infinity
 fi
 
 ip link set lo up
 ip link set eth1 up
 ip link set eth2 up
-ip link set eth3 up 2>/dev/null || true
 
-# VTEP loopback (spine1 is a VTEP only for its own route-reflector role;
-# no L3VNI here — that moved to leaf3)
+# VTEP loopback
 ip link add lo-vtep type dummy 2>/dev/null || true
 ip link set lo-vtep up
-ip addr add 100.64.0.10/32 dev lo-vtep 2>/dev/null || true
+ip addr add 100.64.0.16/32 dev lo-vtep 2>/dev/null || true
+
+# VRF for tenant-2 IP-VRF (L3VNI = 201)
+ip link add tenant2-ipvrf type vrf table 10
+ip link set tenant2-ipvrf up
+
+# eth2 is the host-facing P2P leg — put it in the VRF (routed, not bridged)
+ip link set eth2 master tenant2-ipvrf
+
+# L3VNI VXLAN interface
+ip link add vxlan201 type vxlan \
+  id 201 \
+  local 100.64.0.16 \
+  dstport 4789 \
+  nolearning
+
+# Bridge for L3VNI (required for EVPN Type-5 advertisement)
+ip link add br-l3vni201 type bridge
+ip link set br-l3vni201 master tenant2-ipvrf
+ip link set br-l3vni201 up
+ip link set vxlan201 master br-l3vni201
+ip link set vxlan201 up
 
 PATH="/usr/lib/frr:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 if command -v watchfrr >/dev/null 2>&1; then
@@ -34,6 +53,6 @@ elif [ -x /usr/lib/frr/watchfrr ]; then
 elif [ -x /usr/libexec/frr/watchfrr ]; then
   exec /usr/libexec/frr/watchfrr -F traditional zebra bgpd bfdd staticd
 else
-  echo "spine1-start.sh: watchfrr not found" >&2
+  echo "leaf3-start.sh: watchfrr not found" >&2
   exec sleep infinity
 fi
