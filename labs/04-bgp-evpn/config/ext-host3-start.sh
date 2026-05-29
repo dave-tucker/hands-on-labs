@@ -22,8 +22,9 @@ ip link set eth1 up
 # P2P link to leaf3 VRF (leaf3 eth2: 10.0.5.0/31)
 ip addr add 10.0.5.1/31 dev eth1
 
-# Default route via leaf3 VRF gateway — all traffic (to cluster pods via
-# Type-5 EVPN) goes this way; leaf3 handles the L3VNI encapsulation.
+# Replace the clab management default route with the leaf3 VRF gateway.
+# leaf3 handles L3VNI encapsulation for traffic toward cluster pods.
+ip route del default 2>/dev/null || true
 ip route add default via 10.0.5.0 dev eth1
 
 # Simulated external host address — this is what cluster pods will ping.
