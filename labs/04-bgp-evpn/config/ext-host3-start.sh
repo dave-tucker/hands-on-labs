@@ -19,18 +19,12 @@ fi
 ip link set lo up
 ip link set eth1 up
 
-# P2P link to leaf3 VRF (leaf3 eth2: 10.0.5.0/31)
-ip addr add 10.0.5.1/31 dev eth1
+# Host IP on the shared /24 subnet — leaf3 eth2 (in VRF) is 10.70.0.1/24.
+# leaf3 redistributes 10.70.0.0/24 as EVPN Type-5 via redistribute connected.
+ip addr add 10.70.0.100/24 dev eth1
 
 # Replace the clab management default route with the leaf3 VRF gateway.
-# leaf3 handles L3VNI encapsulation for traffic toward cluster pods.
 ip route del default 2>/dev/null || true
-ip route add default via 10.0.5.0 dev eth1
-
-# Simulated external host address — this is what cluster pods will ping.
-# Leaf3 advertises 10.70.0.0/24 as a Type-5 EVPN route via a VRF static route.
-ip link add lo-ext type dummy 2>/dev/null || true
-ip link set lo-ext up
-ip addr add 10.70.0.100/24 dev lo-ext
+ip route add default via 10.70.0.1 dev eth1
 
 exec sleep infinity
