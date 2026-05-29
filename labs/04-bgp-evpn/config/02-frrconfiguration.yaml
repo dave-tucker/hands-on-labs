@@ -19,34 +19,43 @@ spec:
   nodeSelector:
     matchLabels:
       node-role.kubernetes.io/control-plane: ""
-  raw:
-    priority: 20
-    rawConfig: |
-      router bgp 65000
-       address-family ipv4 unicast
-        network 100.64.0.1/32
-        neighbor 192.168.255.10 activate
-        neighbor 192.168.255.11 activate
-        neighbor 192.168.255.12 activate
-       exit-address-family
-      exit
   bgp:
     routers:
       - asn: 65000
         id: 192.168.255.1
+        prefixes:
+          - 100.64.0.1/32
         neighbors:
           - address: 192.168.255.10
             asn: 65000
             sourceaddress: 192.168.255.1
             bfdProfile: default
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
           - address: 192.168.255.11
             asn: 65000
             sourceaddress: 192.168.255.1
             bfdProfile: default
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
           - address: 192.168.255.12
             asn: 65000
             sourceaddress: 192.168.255.1
             bfdProfile: default
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
     bfdProfiles:
       - name: default
 ---
@@ -61,33 +70,42 @@ spec:
   nodeSelector:
     matchLabels:
       node-role.kubernetes.io/worker: ""
-  raw:
-    priority: 20
-    rawConfig: |
-      router bgp 65000
-       address-family ipv4 unicast
-        network 100.64.0.2/32
-        neighbor 192.168.255.10 activate
-        neighbor 192.168.255.11 activate
-        neighbor 192.168.255.12 activate
-       exit-address-family
-      exit
   bgp:
     routers:
       - asn: 65000
         id: 192.168.255.2
+        prefixes:
+          - 100.64.0.2/32
         neighbors:
           - address: 192.168.255.10
             asn: 65000
             sourceaddress: 192.168.255.2
             bfdProfile: default
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
           - address: 192.168.255.11
             asn: 65000
             sourceaddress: 192.168.255.2
             bfdProfile: default
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
           - address: 192.168.255.12
             asn: 65000
             sourceaddress: 192.168.255.2
             bfdProfile: default
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
     bfdProfiles:
       - name: default

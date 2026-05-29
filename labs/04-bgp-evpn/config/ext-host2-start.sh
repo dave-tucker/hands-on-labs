@@ -18,8 +18,28 @@ fi
 ip link set lo up
 ip link set eth1 up
 
-# Add IP to eth1 (connected to leaf2 bridge)
-ip addr add 10.60.0.100/24 dev eth1
+# Create VTEP loopback interface
+ip link add lo-vtep type dummy 2>/dev/null || true
+ip link set lo-vtep up
+
+# Create VXLAN interface for tenant 2 (VNI 200)
+ip link add vxlan200 type vxlan \
+  id 200 \
+  local 100.64.0.14 \
+  dstport 4789 \
+  nolearning
+
+ip link set vxlan200 up
+
+# Create bridge
+ip link add br-evpn type bridge
+ip link set br-evpn up
+
+# Add VXLAN to bridge
+ip link set vxlan200 master br-evpn
+
+# Add IP to bridge SVI
+ip addr add 10.60.0.100/24 dev br-evpn
 
 PATH="/usr/lib/frr:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 if command -v watchfrr >/dev/null 2>&1; then

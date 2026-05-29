@@ -3,6 +3,7 @@ clab-bgp-evpn/
 
 # Downloaded binaries
 openshift-install
+oc
 
 # Status files
 READY.md

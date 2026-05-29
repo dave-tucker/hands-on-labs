@@ -54,7 +54,7 @@ echo "=== Configuring BGP-EVPN on leaf switches ==="
 # Configure Leaf1
 echo "Configuring Leaf1..."
 docker exec clab-bgp-evpn-leaf1 vtysh -c 'configure terminal' \
-  -c 'router bgp 65001' \
+  -c 'router bgp 65000' \
   -c 'address-family l2vpn evpn' \
   -c 'neighbor 192.168.255.1 allowas-in 1' \
   -c 'neighbor 192.168.255.2 allowas-in 1' \
@@ -64,7 +64,7 @@ docker exec clab-bgp-evpn-leaf1 vtysh -c 'configure terminal' \
 # Configure Leaf2
 echo "Configuring Leaf2..."
 docker exec clab-bgp-evpn-leaf2 vtysh -c 'configure terminal' \
-  -c 'router bgp 65002' \
+  -c 'router bgp 65000' \
   -c 'address-family l2vpn evpn' \
   -c 'neighbor 192.168.255.1 allowas-in 1' \
   -c 'neighbor 192.168.255.2 allowas-in 1' \

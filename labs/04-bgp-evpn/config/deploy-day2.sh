@@ -59,25 +59,10 @@ echo "Step 4: Creating VTEP resource..."
 kubectl apply -f "${CONFIG_DIR}/00-vtep.yaml"
 
 echo ""
-echo "Step 5: Creating VTEP dummy interfaces on nodes..."
-echo "  Creating evpn-vtep interface on master (100.64.0.1)..."
-kubectl debug node/bgp-evpn-ctlplane-0.labs.ovn-k8s.local --image=registry.access.redhat.com/ubi9/ubi:latest -- \
-  chroot /host bash -c "
-    ip link add evpn-vtep type dummy 2>/dev/null || true
-    ip link set evpn-vtep up
-    ip addr add 100.64.0.1/32 dev evpn-vtep 2>/dev/null || true
-  " 2>&1 | grep -v "profile\|Warning\|metadata" || true
-
-echo "  Creating evpn-vtep interface on worker (100.64.0.2)..."
-kubectl debug node/bgp-evpn-worker-0.labs.ovn-k8s.local --image=registry.access.redhat.com/ubi9/ubi:latest -- \
-  chroot /host bash -c "
-    ip link add evpn-vtep type dummy 2>/dev/null || true
-    ip link set evpn-vtep up
-    ip addr add 100.64.0.2/32 dev evpn-vtep 2>/dev/null || true
-  " 2>&1 | grep -v "profile\|Warning\|metadata" || true
-
-echo "  Waiting for VTEP allocation..."
-sleep 10
+echo "Step 5: VTEP dummy interfaces..."
+echo "  (Created by NMState NNCPs in Step 2: lo-vtep on each node with 100.64.0.x/32)"
+echo "  Verifying lo-vtep exists on nodes..."
+kubectl get nncp -o jsonpath='{range .items[*]}{.metadata.name}: {.status.conditions[?(@.type=="Available")].status}{"\n"}{end}'
 
 echo ""
 echo "Step 6: Configuring BGP peering..."
@@ -86,6 +71,15 @@ echo "  Restarting FRR pods to apply configuration..."
 kubectl delete pod -n openshift-frr-k8s -l app=frr-k8s
 kubectl wait --for=condition=ready pod -n openshift-frr-k8s -l app=frr-k8s --timeout=120s
 sleep 10
+
+echo ""
+echo "Step 6b: Applying EVPN FRR workarounds (allowas-in, remove outbound route-maps)..."
+# configure-evpn-frr.sh adds settings that FRRConfiguration CRD cannot express:
+#   - removes restrictive outbound route-maps on cluster nodes so VTEP IPs are propagated
+#   - adds allowas-in on cluster nodes and leaves for EVPN NLRI loop avoidance
+echo "  Waiting 15s for BGP sessions to establish before patching..."
+sleep 15
+bash "${CONFIG_DIR}/configure-evpn-frr.sh"
 
 echo ""
 echo "Step 7: Configuring Route Advertisements..."

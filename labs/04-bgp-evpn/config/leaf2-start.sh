@@ -39,9 +39,8 @@ ip link set vxlan200 up
 ip link add br-vni200 type bridge
 ip link set br-vni200 up
 
-# Add VXLAN and ext-host2 interface to bridge
+# Add VXLAN to bridge (eth4 is a routed P2P interface, not bridged)
 ip link set vxlan200 master br-vni200
-ip link set eth4 master br-vni200
 
 PATH="/usr/lib/frr:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 if command -v watchfrr >/dev/null 2>&1; then

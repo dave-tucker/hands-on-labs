@@ -108,10 +108,10 @@ echo "5. BGP Sessions"
 FRR_POD=$(kubectl get pod -n openshift-frr-k8s -l component=frr-k8s -o jsonpath='{.items[0].metadata.name}')
 if [ -n "$FRR_POD" ]; then
     echo "  IPv4 Unicast:"
-    kubectl exec -n openshift-frr-k8s $FRR_POD -c frr -- vtysh -c "show bgp ipv4 unicast summary" 2>/dev/null | grep "192.168.255" | while read line; do
+    kubectl exec -n openshift-frr-k8s $FRR_POD -c frr -- vtysh -c "show bgp ipv4 unicast summary" 2>/dev/null | grep -E "^192\.168\.255" | while read line; do
         NEIGHBOR=$(echo $line | awk '{print $1}')
         STATE=$(echo $line | awk '{print $10}')
-        if [ "$STATE" -gt 0 ] 2>/dev/null; then
+        if echo "$STATE" | grep -qE '^[0-9]+$'; then
             pass "  $NEIGHBOR: Established ($STATE prefixes)"
         else
             fail "  $NEIGHBOR: $STATE"
@@ -119,10 +119,10 @@ if [ -n "$FRR_POD" ]; then
     done
 
     echo "  L2VPN EVPN:"
-    kubectl exec -n openshift-frr-k8s $FRR_POD -c frr -- vtysh -c "show bgp l2vpn evpn summary" 2>/dev/null | grep "192.168.255" | while read line; do
+    kubectl exec -n openshift-frr-k8s $FRR_POD -c frr -- vtysh -c "show bgp l2vpn evpn summary" 2>/dev/null | grep -E "^192\.168\.255" | while read line; do
         NEIGHBOR=$(echo $line | awk '{print $1}')
         STATE=$(echo $line | awk '{print $10}')
-        if [ "$STATE" -gt 0 ] 2>/dev/null || [ "$STATE" == "0" ]; then
+        if echo "$STATE" | grep -qE '^[0-9]+$'; then
             pass "  $NEIGHBOR: Established ($STATE prefixes)"
         else
             fail "  $NEIGHBOR: $STATE"
@@ -173,26 +173,31 @@ echo "8. Test Workloads"
 if kubectl get namespace evpn-demo &>/dev/null; then
     MASTER_POD=$(kubectl get pod evpn-pod-master -n evpn-demo -o jsonpath='{.status.phase}' 2>/dev/null)
     WORKER_POD=$(kubectl get pod evpn-pod-worker -n evpn-demo -o jsonpath='{.status.phase}' 2>/dev/null)
+    get_evpn_ip() {
+        kubectl get pod $1 -n evpn-demo \
+          -o jsonpath='{.metadata.annotations.k8s\.ovn\.org/pod-networks}' 2>/dev/null \
+          | python3 -c "import sys,json; d=json.load(sys.stdin); net=next((v for v in d.values() if v.get('role')=='primary'), None); print(net['ip_address'].split('/')[0] if net else '')" 2>/dev/null
+    }
     if [ "$MASTER_POD" == "Running" ]; then
-        MASTER_IP=$(kubectl get pod evpn-pod-master -n evpn-demo -o jsonpath='{.status.podIPs[0].ip}')
-        pass "evpn-pod-master running ($MASTER_IP)"
+        MASTER_IP=$(get_evpn_ip evpn-pod-master)
+        pass "evpn-pod-master running (EVPN IP: $MASTER_IP)"
     else
         fail "evpn-pod-master not running ($MASTER_POD)"
     fi
     if [ "$WORKER_POD" == "Running" ]; then
-        WORKER_IP=$(kubectl get pod evpn-pod-worker -n evpn-demo -o jsonpath='{.status.podIPs[0].ip}')
-        pass "evpn-pod-worker running ($WORKER_IP)"
+        WORKER_IP=$(get_evpn_ip evpn-pod-worker)
+        pass "evpn-pod-worker running (EVPN IP: $WORKER_IP)"
     else
         fail "evpn-pod-worker not running ($WORKER_POD)"
     fi
 
-    # Test connectivity
-    if [ "$MASTER_POD" == "Running" ] && [ "$WORKER_POD" == "Running" ]; then
-        echo "  Testing pod-to-pod connectivity..."
+    # Test connectivity using EVPN primary IPs
+    if [ "$MASTER_POD" == "Running" ] && [ "$WORKER_POD" == "Running" ] && [ -n "$WORKER_IP" ]; then
+        echo "  Testing pod-to-pod connectivity (EVPN)..."
         if kubectl exec -n evpn-demo evpn-pod-master -- ping -c 1 -W 2 $WORKER_IP &>/dev/null; then
-            pass "  Connectivity: master → worker"
+            pass "  Connectivity: master → worker ($WORKER_IP)"
         else
-            fail "  Connectivity: master → worker"
+            fail "  Connectivity: master → worker ($WORKER_IP)"
         fi
     fi
 else

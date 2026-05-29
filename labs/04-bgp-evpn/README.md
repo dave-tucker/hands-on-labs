@@ -33,10 +33,10 @@ routeAdvertisements), NMState, and MetalLB/FRR-K8s.
 ### Configure and validate
 
 Follow the
-[Day 2: Configure & Validate](../../docs/labs/03-bgp-evpn/index.md#day-2-configure-validate)
+[Day 2: Configure & Validate](../../docs/labs/04-bgp-evpn/index.md#day-2-configure-validate)
 section: apply VTEP resource, NNCPs (loopback + P2P /31 + static routes),
-FRRConfiguration (multi-protocol BGP enabled), RouteAdvertisements (EVPN CUDN selector),
-EVPN CUDN, namespaces, and workloads. Validate underlay BGP, EVPN sessions, and L2 connectivity.
+FRRConfiguration (multi-protocol BGP enabled, iBGP AS 65000), RouteAdvertisements (EVPN CUDN selector),
+EVPN CUDNs for both tenants, namespaces, and workloads. Validate underlay BGP, EVPN sessions, L2 connectivity (both tenants), and L3 routing (tenant 2 via Type-5 routes).
 
 ### Teardown
 
@@ -51,14 +51,17 @@ CLUSTER_TYPE=k8s ./lab.sh down
 ## Topology
 
 All devices use AS 65000 (iBGP throughout):
-- Spine1 - Route reflector for EVPN, advertises Type-5 routes for ext-host3's network
-- Leaf1, Leaf2 - Route reflectors for cluster nodes, participate in EVPN mesh
-- Cluster nodes (master, worker) - EVPN endpoints for pod networks
-- ext-host - L2-only endpoint, single-homed to Leaf1 (Tenant 1, 10.50.0.100/24)
-- ext-host2 - L2-only endpoint, single-homed to Leaf2 (Tenant 2 L2, 10.60.0.100/24)
-- ext-host3 - iBGP with Spine1, advertises 10.70.0.0/24 (Tenant 2 L3)
+- **Spine1** - Route reflector for leaves and cluster nodes (L2VPN EVPN), advertises Type-5 routes for ext-host3's network
+- **Leaf1, Leaf2** - Route reflectors for cluster nodes and external hosts (IPv4 unicast + L2VPN EVPN)
+- **Cluster nodes** (master, worker) - EVPN endpoints for pod networks, route reflector clients
+- **ext-host** - L2-only endpoint, single-homed to Leaf1 (Tenant 1, 10.50.0.100/24)
+- **ext-host2** - L2-only endpoint, single-homed to Leaf2 (Tenant 2 L2, 10.60.0.100/24)
+- **ext-host3** - L3-only endpoint, iBGP with Spine1, advertises 10.70.0.0/24 (Tenant 2 L3)
 
-iBGP EVPN mesh: Spine1 ↔ Leaf1 ↔ Leaf2 ↔ cluster nodes (master, worker) ↔ ext-host3 (via spine1)
+**iBGP Route Reflection Hierarchy**:
+- L2VPN EVPN: Spine1 (RR) ↔ Leaves (RR) ↔ cluster nodes (clients) + ext-hosts (clients)
+- IPv4 Unicast: Leaves (RR) ↔ cluster nodes (clients) + ext-hosts (clients)
+- Spine1 learns ext-host3's 10.70.0.0/24 via IPv4 unicast and re-advertises as Type-5 EVPN to leaves
 
 ## Addressing
 
@@ -78,7 +81,9 @@ iBGP EVPN mesh: Spine1 ↔ Leaf1 ↔ Leaf2 ↔ cluster nodes (master, worker) �
 | ext-host3 | 192.168.255.15/32 | BGP router-id |
 | **VTEPs** | | |
 | Cluster nodes | 100.64.0.1/32, 100.64.0.2/32 | VXLAN source IP |
-| Spine1 | 100.64.0.10/32 | VXLAN source IP (IP-VRF) |
+| Leaf1, Leaf2 | 100.64.0.11/32, 100.64.0.12/32 | VXLAN source IP |
+| ext-host | 100.64.0.13/32 | VXLAN source IP (Tenant 1) |
+| ext-host2 | 100.64.0.14/32 | VXLAN source IP (Tenant 2) |
 | **Tenant 1 (evpn-l2)** | | |
 | L2 CUDN subnet | 10.50.0.0/24 | Pod IPAM, flat L2 network |
 | MAC-VRF VNI | 100 | VXLAN VNI |
@@ -98,5 +103,8 @@ iBGP EVPN mesh: Spine1 ↔ Leaf1 ↔ Leaf2 ↔ cluster nodes (master, worker) �
 - **MAC-VRF (Type-2/3)**: L2 switching for tenant 1 (VNI 100) and tenant 2 (VNI 200)
 - **IP-VRF (Type-5)**: L3 routing for tenant 2 external network (VNI 201)
 - **VXLAN Encapsulation**: VTEPs advertised via BGP underlay
-- **Full Mesh EVPN**: All EVPN speakers peer directly (no route reflection)
+- **iBGP with Route Reflection**: 
+  - Spine1 is a route reflector for leaves and cluster nodes (L2VPN EVPN only)
+  - Leaves are route reflectors for cluster nodes and external hosts (IPv4 unicast + L2VPN EVPN)
+  - All devices use AS 65000 to simplify configuration
 - **BFD**: Fast failure detection for all BGP sessions

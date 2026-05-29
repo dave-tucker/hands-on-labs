@@ -9,7 +9,7 @@ numcpus: 8
 disk_size: 60
 network: default
 network_type: OVNKubernetes
-pull_secret: ~/pull_secret_with_ci.json
+pull_secret: ~/dev/pull_secret_with_ci.json
 featureset: TechPreviewNoUpgrade
 
 extra_networks:
