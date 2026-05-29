@@ -46,8 +46,8 @@ echo "Step 3: Enabling FRR-K8s via Network operator..."
 if kubectl get namespace openshift-frr-k8s &>/dev/null; then
     echo "  FRR-K8s already enabled, skipping..."
 else
-    oc patch Network.operator.openshift.io cluster --type=merge \
-      -p='{"spec": {"additionalRoutingCapabilities": {"providers": ["FRR"]}, "defaultNetwork": {"ovnKubernetesConfig": {"routeAdvertisements": "Enabled"}}}}'
+    kubectl patch Network.operator.openshift.io cluster --type=merge \
+      -p='{"spec": {"additionalRoutingCapabilities": {"providers": ["FRR"]}, "defaultNetwork": {"ovnKubernetesConfig": {"routeAdvertisements": "Enabled", "gatewayConfig": {"routingViaHost": true}}}}}'
 
     echo "  Waiting for FRR-K8s pods to be ready..."
     sleep 30
@@ -71,15 +71,6 @@ echo "  Restarting FRR pods to apply configuration..."
 kubectl delete pod -n openshift-frr-k8s -l app=frr-k8s
 kubectl wait --for=condition=ready pod -n openshift-frr-k8s -l app=frr-k8s --timeout=120s
 sleep 10
-
-echo ""
-echo "Step 6b: Applying EVPN FRR workarounds (allowas-in, remove outbound route-maps)..."
-# configure-evpn-frr.sh adds settings that FRRConfiguration CRD cannot express:
-#   - removes restrictive outbound route-maps on cluster nodes so VTEP IPs are propagated
-#   - adds allowas-in on cluster nodes and leaves for EVPN NLRI loop avoidance
-echo "  Waiting 15s for BGP sessions to establish before patching..."
-sleep 15
-bash "${CONFIG_DIR}/configure-evpn-frr.sh"
 
 echo ""
 echo "Step 7: Configuring Route Advertisements..."
