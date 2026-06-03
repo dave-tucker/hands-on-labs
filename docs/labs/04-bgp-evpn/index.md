@@ -7,7 +7,7 @@ CLOS-style spine/leaf topology with BGP-EVPN. Demonstrates multi-tenant Layer 2 
 This lab extends the BGP CLOS fabric (lab 02) with EVPN (Ethernet VPN) support. Two tenants demonstrate different EVPN capabilities:
 
 - **Tenant 1 (evpn-l2)**: Layer 2 CUDN with MAC-VRF (VNI 100) and IP-VRF (VNI 101). Pods and ext-host share a flat L2 broadcast domain (10.50.0.0/24).
-- **Tenant 2 (evpn-l3)**: Layer 2 CUDN with MAC-VRF (VNI 200) and IP-VRF (VNI 201). Demonstrates both L2 connectivity (pods ↔ ext-host2 via VNI 200) and L3 routing (pods ↔ ext-host3 via EVPN Type-5 routes advertised by spine1).
+- **Tenant 2 (evpn-l3)**: Layer 2 CUDN with MAC-VRF (VNI 200) and IP-VRF (VNI 201). Demonstrates both L2 connectivity (pods ↔ ext-host2 via VNI 200) and L3 routing (pods ↔ ext-host3 via EVPN Type-5 routes advertised by leaf3).
 
 ### Topology
 
@@ -22,6 +22,7 @@ graph TB
     subgraph Leaves
         L1[Leaf1<br/>AS 65000<br/>192.168.255.11/32<br/>VTEP: 100.64.0.11]
         L2[Leaf2<br/>AS 65000<br/>192.168.255.12/32<br/>VTEP: 100.64.0.12]
+        L3[Leaf3<br/>AS 65000<br/>192.168.255.16/32<br/>VTEP: 100.64.0.16]
     end
     
     subgraph Cluster["Cluster Nodes (AS 65000)"]
@@ -29,15 +30,15 @@ graph TB
         W[worker<br/>192.168.255.2/32<br/>VTEP: 100.64.0.2]
     end
     
-    subgraph External["External Hosts (AS 65000)"]
+    subgraph External["External Hosts"]
         EH[ext-host<br/>192.168.255.13/32<br/>VTEP: 100.64.0.13]
         EH2[ext-host2<br/>192.168.255.14/32<br/>VTEP: 100.64.0.14]
-        EH3[ext-host3<br/>192.168.255.15/32<br/>10.70.0.0/24]
+        EH3[ext-host3<br/>10.70.0.100/24<br/>no FRR — plain host]
     end
     
     S1 ---|10.10.1.0/31| L1
     S1 ---|10.10.2.0/31| L2
-    S1 ---|10.10.3.0/31| EH3
+    S1 ---|10.10.3.0/31| L3
     
     L1 ---|10.0.1.0/31| M
     L1 ---|10.0.1.2/31| W
@@ -46,6 +47,8 @@ graph TB
     L2 ---|10.0.2.0/31| M
     L2 ---|10.0.2.2/31| W
     L2 ---|10.0.4.0/31| EH2
+    
+    L3 ---|10.70.0.0/24 in VRF| EH3
 ```
 
 The underlay provides IPv4 reachability between all BGP speakers using their loopback addresses. All devices run iBGP (AS 65000). Leaves act as route reflectors for cluster nodes and external hosts. Spine1 acts as a route reflector for leaves in the L2VPN EVPN address-family. This fabric carries VXLAN-encapsulated EVPN traffic between VTEPs.
@@ -68,9 +71,9 @@ graph TB
         EH2[ext-host2<br/>VTEP: 100.64.0.14<br/>10.60.0.100/24]
     end
     
-    subgraph L3["Layer 3 Routing via Spine1"]
-        EH3[ext-host3<br/>10.70.0.0/24<br/>Type-5 routes]
-        S1[spine1<br/>EVPN route reflector]
+    subgraph L3["Layer 3 Routing via Leaf3 (VRF tenant2-ipvrf)"]
+        EH3[ext-host3<br/>10.70.0.100/24<br/>plain host — no FRR]
+        L3[leaf3<br/>VTEP: 100.64.0.16<br/>L3VNI 201]
     end
     
     M1 <-->|VXLAN Type-2/3| W1
@@ -81,9 +84,9 @@ graph TB
     M2 <-->|VXLAN Type-2/3| L2
     M2 <-->|VXLAN Type-2/3| EH2
     
-    M2 -.->|Type-5 IP routes| S1
-    W2 -.->|Type-5 IP routes| S1
-    S1 -.->|IPv4 unicast BGP| EH3
+    M2 -.->|L3VNI VXLAN VNI 201| L3
+    W2 -.->|L3VNI VXLAN VNI 201| L3
+    L3 ---|10.70.0.0/24 in VRF| EH3
     
     style T1 fill:#e6f3ff,stroke:#0066cc,stroke-width:2px
     style T2 fill:#ffe6f0,stroke:#cc0066,stroke-width:2px
@@ -98,7 +101,7 @@ graph TB
 **Tenant 2 (evpn-l3)**:
 - MAC-VRF (VNI 200): Layer 2 VXLAN tunnels between master, worker, leaf2, and ext-host2
 - IP-VRF (VNI 201): Layer 3 routing domain
-- Type-5 routes: spine1 advertises ext-host3's 10.70.0.0/24 subnet to cluster nodes via EVPN
+- Type-5 routes: leaf3 advertises ext-host3's 10.70.0.0/24 subnet to cluster nodes via EVPN (rd 192.168.255.16:201, rt 65000:201)
 
 **Route Reflection**:
 - Leaves are route reflectors for cluster nodes and external hosts (IPv4 + L2VPN EVPN)
@@ -111,7 +114,8 @@ graph TB
 | **Underlay P2P Links** | | |
 | Spine1–Leaf1 P2P | 10.10.1.0/31 | Spine1 eth1, Leaf1 eth1 |
 | Spine1–Leaf2 P2P | 10.10.2.0/31 | Spine1 eth2, Leaf2 eth1 |
-| Spine1–ext-host3 P2P | 10.10.3.0/31 | Spine1 eth3, ext-host3 eth1 |
+| Spine1–Leaf3 core | 10.10.3.0/31 | Spine1 eth3, Leaf3 eth1 |
+| Leaf3–ext-host3 | 10.70.0.0/24 | Leaf3 eth2 in VRF (10.70.0.1/24), ext-host3 eth1 (10.70.0.100/24) |
 | Leaf1–master P2P | 10.0.1.0/31 | Leaf1 eth2, master ens4 |
 | Leaf1–worker P2P | 10.0.1.2/31 | Leaf1 eth3, worker ens4 |
 | Leaf1–ext-host P2P | 10.0.3.0/31 | Leaf1 eth4, ext-host eth1 |
@@ -126,7 +130,7 @@ graph TB
 | worker | 192.168.255.2/32 | BGP router-id |
 | ext-host | 192.168.255.13/32 | BGP router-id |
 | ext-host2 | 192.168.255.14/32 | BGP router-id |
-| ext-host3 | 192.168.255.15/32 | BGP router-id |
+| Leaf3 | 192.168.255.16/32 | BGP router-id |
 | **VTEP IPs** | | |
 | master VTEP | 100.64.0.1/32 | Auto-assigned by VTEP resource |
 | worker VTEP | 100.64.0.2/32 | Auto-assigned by VTEP resource |
@@ -134,6 +138,7 @@ graph TB
 | Leaf2 VTEP | 100.64.0.12/32 | Manual loopback (lo-vtep) |
 | ext-host VTEP | 100.64.0.13/32 | Manual loopback (lo-vtep) |
 | ext-host2 VTEP | 100.64.0.14/32 | Manual loopback (lo-vtep) |
+| Leaf3 VTEP | 100.64.0.16/32 | Manual loopback (lo-vtep) |
 | **Tenant 1 (evpn-l2)** | | |
 | L2 CUDN subnet | 10.50.0.0/24 | Pod IPAM, namespace: evpn-demo |
 | MAC-VRF VNI | 100 | VXLAN VNI for L2 overlay |
@@ -154,18 +159,20 @@ All devices use **AS 65000 (iBGP)**. Route reflection prevents iBGP split-horizo
 
 | Speaker | IPv4 Unicast Peers | L2VPN EVPN Peers | Role |
 |---------|-------------------|------------------|------|
-| **Spine1** | Leaf1 (10.10.1.1), Leaf2 (10.10.2.1), ext-host3 (10.10.3.1) | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12), master (192.168.255.1), worker (192.168.255.2) | Route reflector (EVPN) |
+| **Spine1** | Leaf1 (10.10.1.1), Leaf2 (10.10.2.1), Leaf3 (192.168.255.16) | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12), Leaf3 (192.168.255.16), master (192.168.255.1), worker (192.168.255.2) | Route reflector (EVPN) |
+| **Leaf3** | Spine1 (10.10.3.0) | Spine1 (192.168.255.10) | VRF tenant2-ipvrf, L3VNI 201, generates Type-5 for 10.70.0.0/24 |
 | **Leaf1** | Spine1 (10.10.1.0), master (192.168.255.1), worker (192.168.255.2), ext-host (192.168.255.13), Leaf2 (192.168.255.11) | Spine1 (192.168.255.10), master (192.168.255.1), worker (192.168.255.2), ext-host (192.168.255.13), ext-host2 (192.168.255.14), Leaf2 (192.168.255.12) | Route reflector (IPv4 + EVPN for clients) |
 | **Leaf2** | Spine1 (10.10.2.0), master (192.168.255.1), worker (192.168.255.2), ext-host2 (192.168.255.14), Leaf1 (192.168.255.12) | Spine1 (192.168.255.10), master (192.168.255.1), worker (192.168.255.2), ext-host (192.168.255.13), ext-host2 (192.168.255.14), Leaf1 (192.168.255.11) | Route reflector (IPv4 + EVPN for clients) |
 | **master** | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12) | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12), Spine1 (192.168.255.10) | Route reflector client |
 | **worker** | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12) | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12), Spine1 (192.168.255.10) | Route reflector client |
 | **ext-host** | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12) | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12) | Route reflector client (Tenant 1) |
 | **ext-host2** | Leaf2 (192.168.255.12) | Leaf1 (192.168.255.11), Leaf2 (192.168.255.12) | Route reflector client (Tenant 2) |
-| **ext-host3** | Spine1 (10.10.3.0) | None | IPv4 unicast only (Type-5 source) |
+| **ext-host3** | — | — | Plain host (no FRR), 10.70.0.100/24, gw=10.70.0.1 (leaf3 VRF) |
 
 **Route Reflection Architecture**:
 - **Spine1**: Route reflector for leaves and cluster nodes in L2VPN EVPN address-family
 - **Leaves**: Route reflectors for cluster nodes and external hosts in both IPv4 unicast and L2VPN EVPN address-families
+- **Leaf3**: Dedicated leaf for ext-host3; holds VRF `tenant2-ipvrf` (L3VNI 201) and generates the EVPN Type-5 for `10.70.0.0/24` via `redistribute connected`
 - **Why route reflection**: iBGP split-horizon rule prevents routes learned from one iBGP peer from being advertised to another. Without route reflection, cluster nodes cannot learn VTEP IPs from each other or from external hosts.
 
 ### EVPN Details
@@ -559,11 +566,14 @@ Verify pods and ext-host are on the same L2 network.
 ##### Get pod IPs
 
 ```bash
+# Use network-status annotation to get the UDN primary IP (not the default network)
 POD_MASTER_IP=$(kubectl get pod -n evpn-demo evpn-pod-master \
-  -o jsonpath='{.status.podIPs[0].ip}')
+  -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}' \
+  | jq -r '.[] | select(.default == true) | .ips[0]')
 
 POD_WORKER_IP=$(kubectl get pod -n evpn-demo evpn-pod-worker \
-  -o jsonpath='{.status.podIPs[0].ip}')
+  -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}' \
+  | jq -r '.[] | select(.default == true) | .ips[0]')
 
 echo "Master pod IP: $POD_MASTER_IP"
 echo "Worker pod IP: $POD_WORKER_IP"
@@ -648,11 +658,14 @@ Verify tenant 2 pods and ext-host2 share a L2 network.
 ##### Get tenant 2 pod IPs
 
 ```bash
+# Use network-status annotation to get the UDN primary IP (not the default network)
 POD_T2_MASTER_IP=$(kubectl get pod -n evpn-l3 evpn-pod-master \
-  -o jsonpath='{.status.podIPs[0].ip}')
+  -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}' \
+  | jq -r '.[] | select(.default == true) | .ips[0]')
 
 POD_T2_WORKER_IP=$(kubectl get pod -n evpn-l3 evpn-pod-worker \
-  -o jsonpath='{.status.podIPs[0].ip}')
+  -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}' \
+  | jq -r '.[] | select(.default == true) | .ips[0]')
 
 echo "Tenant 2 Master pod IP: $POD_T2_MASTER_IP"
 echo "Tenant 2 Worker pod IP: $POD_T2_WORKER_IP"
@@ -702,50 +715,50 @@ Expected: Pod MACs with VTEP IPs (100.64.0.1, 100.64.0.2).
 #### Phase 6: Tenant 2 L3 Connectivity (Type-5 Routes)
 
 Verify Layer 3 routing between tenant 2 pods and ext-host3 via EVPN Type-5 routes.
+ext-host3 is a plain host (no FRR) connected to leaf3's VRF interface (10.70.0.1/24).
+Leaf3 generates the Type-5 route for 10.70.0.0/24 via `redistribute connected`.
 
-##### Verify spine1 learns ext-host3 subnet
-
-```bash
-docker exec clab-bgp-evpn-spine1 vtysh -c "show ip route"
-```
-
-Expected: Route to 10.70.0.0/24 learned from ext-host3 (10.10.3.1).
-
-##### Verify spine1 advertises Type-5 routes
+##### Verify leaf3 VRF has the connected route
 
 ```bash
-docker exec clab-bgp-evpn-spine1 vtysh -c "show bgp l2vpn evpn route type prefix"
+docker exec clab-bgp-evpn-leaf3 vtysh -c "show ip route vrf tenant2-ipvrf"
 ```
 
-Expected: Type-5 route for 10.70.0.0/24 advertised to leaves.
+Expected: `C>* 10.70.0.0/24 is directly connected, eth2`
 
-##### Check Type-5 routes on leaves
+##### Verify leaf3 advertises Type-5 route
 
 ```bash
-docker exec clab-bgp-evpn-leaf1 vtysh -c "show bgp l2vpn evpn route type prefix"
+docker exec clab-bgp-evpn-leaf3 vtysh -c "show bgp l2vpn evpn route type 5"
 ```
 
-Expected: Type-5 route for 10.70.0.0/24 from spine1 (192.168.255.10).
+Expected: `[5]:[0]:[24]:[10.70.0.0]` with RT:65000:201 and VTEP 100.64.0.16.
+
+##### Check Type-5 route on cluster nodes
+
+```bash
+FRR_POD=$(kubectl get pod -n openshift-frr-k8s -l app=frr-k8s \
+  --field-selector spec.nodeName=bgp-evpn-worker-0.labs.ovn-k8s.local \
+  -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n openshift-frr-k8s $FRR_POD -c frr -- \
+  vtysh -c "show ip route vrf evpn-l3 10.70.0.0/24"
+```
+
+Expected: `B>* 10.70.0.0/24 via 100.64.0.16, svl3-evpn-l3 onlink` (leaf3 VTEP).
 
 ##### Ping from tenant 2 pod to ext-host3
 
 ```bash
-kubectl exec -n evpn-l3 evpn-pod-master -- ping -c 3 10.70.0.1
+kubectl exec -n evpn-l3 evpn-pod-master -- ping -c 3 10.70.0.100
 ```
 
-Expected: 0% packet loss (routed via Type-5 EVPN routes).
-
-##### Verify routing table on cluster nodes
-
-```bash
-OVNKUBE_POD=$(kubectl get pods -n openshift-ovn-kubernetes -l app=ovnkube-node \
-  --field-selector spec.nodeName=bgp-evpn-ctlplane-0.labs.ovn-k8s.local -o name | head -1)
-
-kubectl exec -ti -n openshift-ovn-kubernetes "$OVNKUBE_POD" -c ovnkube-node -- \
-  ip route show | grep 10.70
-```
-
-Expected: Route to 10.70.0.0/24 via appropriate next-hop.
+!!! note "Known OVN-K8s issue"
+    ICMP echo reply is dropped by OVN's stateful ACL due to a CT zone asymmetry
+    with `routingViaHost`. Use traceroute to verify the data plane is working:
+    ```bash
+    kubectl exec -n evpn-l3 evpn-pod-master -- traceroute -n -m 2 10.70.0.100
+    ```
+    Expected: hop 1 = `10.70.0.100` (ext-host3 responds to UDP probes).
 
 #### Phase 7: Multi-Tenancy Isolation
 
@@ -865,11 +878,11 @@ This topology demonstrates both Layer 2 and Layer 3 EVPN capabilities across two
    # L2 connectivity to ext-host2
    kubectl exec -n evpn-l3 evpn-pod-master -- ping -c 3 10.60.0.100
    
-   # L3 connectivity to ext-host3 (via Type-5 routes)
-   kubectl exec -n evpn-l3 evpn-pod-master -- ping -c 3 10.70.0.1
+   # L3 connectivity to ext-host3 (via Type-5 routes; use traceroute — see Phase 6 note)
+   kubectl exec -n evpn-l3 evpn-pod-master -- traceroute -n -m 2 10.70.0.100
    
    # Verify Type-5 route propagation
-   docker exec clab-bgp-evpn-leaf1 vtysh -c "show bgp l2vpn evpn route type prefix"
+   docker exec clab-bgp-evpn-leaf3 vtysh -c "show bgp l2vpn evpn route type 5"
    ```
 
 3. **Tenant isolation**:
