@@ -175,8 +175,8 @@ if kubectl get namespace evpn-demo &>/dev/null; then
     WORKER_POD=$(kubectl get pod evpn-pod-worker -n evpn-demo -o jsonpath='{.status.phase}' 2>/dev/null)
     get_evpn_ip() {
         kubectl get pod $1 -n evpn-demo \
-          -o jsonpath='{.metadata.annotations.k8s\.ovn\.org/pod-networks}' 2>/dev/null \
-          | python3 -c "import sys,json; d=json.load(sys.stdin); net=next((v for v in d.values() if v.get('role')=='primary'), None); print(net['ip_address'].split('/')[0] if net else '')" 2>/dev/null
+          -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}' 2>/dev/null \
+          | jq -r '.[] | select(.default == true) | .ips[0]' 2>/dev/null
     }
     if [ "$MASTER_POD" == "Running" ]; then
         MASTER_IP=$(get_evpn_ip evpn-pod-master)

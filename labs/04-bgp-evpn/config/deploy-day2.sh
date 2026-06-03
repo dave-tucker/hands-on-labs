@@ -110,4 +110,5 @@ echo "  FRR_POD=\$(kubectl get pod -n openshift-frr-k8s -l component=frr-k8s --f
 echo "  kubectl exec -n openshift-frr-k8s \$FRR_POD -c frr -- vtysh -c 'show bgp summary'"
 echo ""
 echo "To test connectivity:"
-echo "  kubectl exec -n evpn-demo evpn-pod-master -- ping -c 3 \$(kubectl get pod evpn-pod-worker -n evpn-demo -o jsonpath='{.status.podIPs[0].ip}')"
+echo "  WORKER_IP=\$(kubectl get pod evpn-pod-worker -n evpn-demo -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}' | jq -r '.[] | select(.default == true) | .ips[0]')"
+echo "  kubectl exec -n evpn-demo evpn-pod-master -- ping -c 3 \$WORKER_IP"

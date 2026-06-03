@@ -311,8 +311,10 @@ VNI        Type VxLAN IF              # MACs   # ARPs   # Remote VTEPs  Tenant V
 Test L2 connectivity between pods:
 
 ```bash
+# Use network-status annotation to get the UDN primary IP (not the default network IP)
 WORKER_IP=$(kubectl get pod evpn-pod-worker -n evpn-demo \
-  -o jsonpath='{.status.podIPs[0].ip}')
+  -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}' \
+  | jq -r '.[] | select(.default == true) | .ips[0]')
 
 kubectl exec -n evpn-demo evpn-pod-master -- ping -c 3 $WORKER_IP
 ```
@@ -325,7 +327,8 @@ Ping from ext-host to cluster pods:
 
 ```bash
 POD_IP=$(kubectl get pod evpn-pod-master -n evpn-demo \
-  -o jsonpath='{.status.podIPs[0].ip}')
+  -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}' \
+  | jq -r '.[] | select(.default == true) | .ips[0]')
 
 docker exec clab-bgp-evpn-ext-host ping -c 3 $POD_IP
 ```
