@@ -73,7 +73,7 @@ graph TB
     
     subgraph L3["Layer 3 Routing via Leaf3 (VRF tenant2-ipvrf)"]
         EH3[ext-host3<br/>10.70.0.100/24<br/>plain host — no FRR]
-        L3[leaf3<br/>VTEP: 100.64.0.16<br/>L3VNI 201]
+        LF3[leaf3<br/>VTEP: 100.64.0.16<br/>L3VNI 201]
     end
     
     M1 <-->|VXLAN Type-2/3| W1
@@ -84,9 +84,9 @@ graph TB
     M2 <-->|VXLAN Type-2/3| L2
     M2 <-->|VXLAN Type-2/3| EH2
     
-    M2 -.->|L3VNI VXLAN VNI 201| L3
-    W2 -.->|L3VNI VXLAN VNI 201| L3
-    L3 ---|10.70.0.0/24 in VRF| EH3
+    M2 -.->|L3VNI VXLAN VNI 201| LF3
+    W2 -.->|L3VNI VXLAN VNI 201| LF3
+    LF3 ---|10.70.0.0/24 in VRF| EH3
     
     style T1 fill:#e6f3ff,stroke:#0066cc,stroke-width:2px
     style T2 fill:#ffe6f0,stroke:#cc0066,stroke-width:2px
